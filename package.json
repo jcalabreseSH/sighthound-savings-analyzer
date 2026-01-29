@@ -1,0 +1,24 @@
+{
+  "name": "sighthound-savings-analyzer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcalabreseSH/sighthound-savings-analyzer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jcalabreseSH/sighthound-savings-analyzer/issues"
+  },
+  "homepage": "https://github.com/jcalabreseSH/sighthound-savings-analyzer#readme",
+  "dependencies": {
+    "jsdom": "^21.1.0"
+  }
+}
