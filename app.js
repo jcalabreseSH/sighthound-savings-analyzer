@@ -283,6 +283,10 @@ function attachEventHandlers() {
     });
   });
 }
+  // Download PDF
+  onClick("downloadPdf", () => {
+    generatePDF();
+  });
 
 // ---------- CAMERA / NODE LOGIC ----------
 function updateCamerasAndNodes() {
@@ -553,4 +557,105 @@ function updateSavingsCard() {
       `Additional investment of ${fmt.format(Math.abs(savings))} over ${state.timeframe} months. ` +
       `This includes upgraded hardware and enterprise-grade analytics.`;
   }
+}
+
+// ---------- PDF EXPORT ----------
+async function generatePDF() {
+  function findJsPDF() {
+    if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
+    if (window.jsPDF) return window.jsPDF;
+    return null;
+  }
+
+  function loadJsPDF() {
+    return new Promise((resolve, reject) => {
+      const existing = findJsPDF();
+      if (existing) return resolve(existing);
+
+      const url = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      const s = document.createElement("script");
+      s.src = url;
+      s.async = true;
+      s.onload = () => {
+        const found = findJsPDF();
+        if (found) return resolve(found);
+        return reject(new Error("jsPDF loaded but global not found"));
+      };
+      s.onerror = (e) => reject(e || new Error("Failed to load jsPDF"));
+      document.head.appendChild(s);
+    });
+  }
+
+  const jsPDFCtor = findJsPDF() || await loadJsPDF();
+  const jsPDF = jsPDFCtor;
+  const doc = new jsPDF();
+  const pad = 14;
+  let y = 20;
+
+  doc.setFontSize(16);
+  doc.text("Sighthound Savings Analysis", pad, y);
+  y += 10;
+
+  doc.setFontSize(11);
+  doc.text(`Timeframe: ${state.timeframe} months`, pad, y);
+  y += 7;
+  doc.text(`Camera type: ${state.cameraType || "N/A"}`, pad, y);
+  y += 7;
+  doc.text(`Ownership: ${state.ownership || "N/A"}`, pad, y);
+  y += 7;
+  doc.text(`Standard cameras: ${state.standardCameras}`, pad, y);
+  y += 6;
+  doc.text(`Smart cameras: ${state.smartCameras}`, pad, y);
+  y += 6;
+  doc.text(`Compute nodes: ${state.computeNodes}`, pad, y);
+  y += 8;
+
+  doc.text("Selected software:", pad, y);
+  y += 6;
+  if (state.software.length) {
+    state.software.forEach((s) => {
+      doc.text(`- ${s.type.toUpperCase()} @ $${s.price}/stream/mo`, pad + 4, y);
+      y += 6;
+    });
+  } else {
+    doc.text("- None", pad + 4, y);
+    y += 6;
+  }
+
+  y += 4;
+
+  // Recompute numeric breakdowns (same logic used in UI)
+  const totalCameras = state.standardCameras + state.smartCameras;
+  const monthlySoftwareTotal = state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
+  const hardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const hardwareSmart = state.smartCameras * PRICES.smartCamera;
+  const hardwareNodes = state.computeNodes * PRICES.node;
+  const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
+  const sighthoundTotal = hardwareTotal + monthlySoftwareTotal * state.timeframe;
+  const currentMonthlyNormalized = state.frequency === "annual" ? state.currentMonthly / 12 : state.currentMonthly;
+  const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
+  const savings = currentTotal - sighthoundTotal;
+
+  doc.setFontSize(13);
+  doc.text("Cost Breakdown", pad, y);
+  y += 8;
+  doc.setFontSize(11);
+  doc.text(`Current total (${state.timeframe} mo): $${Math.round(currentTotal).toLocaleString()}`, pad, y);
+  y += 6;
+  doc.text(`Sighthound total (${state.timeframe} mo): $${Math.round(sighthoundTotal).toLocaleString()}`, pad, y);
+  y += 8;
+
+  if (savings > 0) {
+    doc.setTextColor(0, 128, 0);
+    doc.setFontSize(14);
+    doc.text(`Estimated savings: $${Math.round(savings).toLocaleString()}`, pad, y);
+    doc.setTextColor(0, 0, 0);
+  } else {
+    doc.setTextColor(200, 0, 0);
+    doc.setFontSize(14);
+    doc.text(`Additional cost: $${Math.round(Math.abs(savings)).toLocaleString()}`, pad, y);
+    doc.setTextColor(0, 0, 0);
+  }
+
+  doc.save("savings-analysis.pdf");
 }

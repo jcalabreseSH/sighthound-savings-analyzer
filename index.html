@@ -580,6 +580,10 @@
 
           <!-- Follow-up Actions -->
           <div class="follow-up" data-astro-cid-j7pv25f6>
+            <button class="btn btn-primary" id="downloadPdf" data-astro-cid-j7pv25f6>
+              Download PDF
+            </button>
+
             <button class="btn btn-secondary" data-astro-cid-j7pv25f6>
               Email me a PDF of this analysis
             </button>
@@ -596,6 +600,8 @@
       </section>
     </div>
 
+    <!-- jsPDF (UMD) for client-side PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-0z6d5rH2c0g+1b4YL4WqzE9y2u3f24gI7wKX2uZf0O4FqeG8s8wQ8r7t+gkQw7aK0bq6k+9m7wz2zq4GmVq2ZA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
