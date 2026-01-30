@@ -8,7 +8,7 @@
 
     <title>Sighthound Savings Analyzer</title>
 
- <link rel="stylesheet" href="./styles/savings-analyzer.css" />
+    <link rel="stylesheet" href="./styles/savings-analyzer.css" />
 </head>
   <!-- Dark mode class injection point - will be replaced with `dark` class based on your site palette -->
   <body class="__DARK_MODE_CLASS__">
@@ -149,6 +149,10 @@
                   </div>
                 </button>
               </div>
+
+              <div class="step-actions">
+                <button class="btn btn-secondary btn-back" id="backStep1b" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 2: Camera Count & Hardware -->
@@ -283,10 +287,10 @@
                   <div class="hardware-header" data-astro-cid-j7pv25f6>
                     <div class="hardware-info" data-astro-cid-j7pv25f6>
                       <div class="hardware-label" data-astro-cid-j7pv25f6>
-                        Compute Nodes
+                        Compute Nodes (optional)
                       </div>
                       <div class="hardware-price" data-astro-cid-j7pv25f6>
-                        $3,500 each (supports 4 cameras)
+                        $3,500 each (supports up to 4 cameras)
                       </div>
                     </div>
 
@@ -325,13 +329,17 @@
                 </div>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep2"
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep2"
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <button class="btn btn-secondary btn-back" id="backStep2" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 3: Software Interest -->
@@ -405,14 +413,18 @@
                 </label>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep3"
-                disabled
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep3"
+                  disabled
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <button class="btn btn-secondary btn-back" id="backStep3" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 4: Current Costs -->
@@ -493,13 +505,17 @@
                 </div>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep4"
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep4"
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <button class="btn btn-secondary btn-back" id="backStep4" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 5: Calculate -->
@@ -513,17 +529,21 @@
                 would cost.
               </p>
 
-              <button
-                class="btn btn-primary btn-lg"
-                id="calculateButton"
-                data-astro-cid-j7pv25f6
-              >
-                Calculate my savings
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-lg"
+                  id="calculateButton"
+                  data-astro-cid-j7pv25f6
+                >
+                  Calculate my savings
+                </button>
 
-              <button class="btn btn-text" id="editAnswers" data-astro-cid-j7pv25f6>
-                Edit my answers
-              </button>
+                <button class="btn btn-secondary btn-back" id="backStep5" data-astro-cid-j7pv25f6>Back</button>
+
+                <button class="btn btn-text" id="editAnswers" data-astro-cid-j7pv25f6>
+                  Edit my answers
+                </button>
+              </div>
             </div>
           </div>
         </div>

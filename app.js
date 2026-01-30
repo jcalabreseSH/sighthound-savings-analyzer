@@ -89,6 +89,39 @@ function attachEventHandlers() {
       return;
     }
 
+    // Back buttons (allow going back to previous steps to edit responses)
+    if (btn.id === "backStep1b") {
+      e.preventDefault();
+      goToStep(1);
+      return;
+    }
+
+    if (btn.id === "backStep2") {
+      e.preventDefault();
+      // If user came from 1b (IP cameras), return there; otherwise go to step 1
+      if (state.cameraType === "ip") goToStep("1b");
+      else goToStep(1);
+      return;
+    }
+
+    if (btn.id === "backStep3") {
+      e.preventDefault();
+      goToStep(2);
+      return;
+    }
+
+    if (btn.id === "backStep4") {
+      e.preventDefault();
+      goToStep(3);
+      return;
+    }
+
+    if (btn.id === "backStep5") {
+      e.preventDefault();
+      goToStep(4);
+      return;
+    }
+
     if (btn.id === "calculateButton") {
       e.preventDefault();
       runAnalysis();
