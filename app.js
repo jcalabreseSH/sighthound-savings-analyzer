@@ -86,6 +86,19 @@ function attachEventHandlers() {
       return;
     }
 
+    if (btn.id === "skipStep3") {
+      e.preventDefault();
+      // Clear any selected software and advance — software is optional
+      console.log('[savings] skipStep3 clicked: clearing software and advancing');
+      document.querySelectorAll('#step3 input[name="software"]').forEach((input) => {
+        input.checked = false;
+      });
+      state.software = [];
+      updateContinueStep3State();
+      goToStep(4);
+      return;
+    }
+
     if (btn.id === "continueStep4") {
       e.preventDefault();
       goToStep(5);

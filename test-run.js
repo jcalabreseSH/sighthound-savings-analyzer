@@ -105,6 +105,27 @@ const path = require('path');
       const active = dom.window.document.querySelector('.step.active');
       log.push('After click continueStep2 active step id: ' + (active ? active.id : 'none'));
 
+      // Test skipping Step 3 (software optional)
+      const skipBtn = dom.window.document.getElementById('skipStep3');
+      if (skipBtn) {
+        const evSkip = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+        skipBtn.dispatchEvent(evSkip);
+        await new Promise((r) => setTimeout(r, 50));
+        log.push('After clicking skipStep3 active step id: ' + (dom.window.document.querySelector('.step.active') ? dom.window.document.querySelector('.step.active').id : 'none'));
+
+        // Now navigate back from step4 to step3 and ensure continue is still disabled (no selection)
+        const back4Btn = dom.window.document.getElementById('backStep4');
+        if (back4Btn) {
+          const evb4 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+          back4Btn.dispatchEvent(evb4);
+          await new Promise((r) => setTimeout(r, 50));
+          const activeAfterBack = dom.window.document.querySelector('.step.active');
+          log.push('After clicking backStep4 active step id: ' + (activeAfterBack ? activeAfterBack.id : 'none'));
+          const cont3now = dom.window.document.getElementById('continueStep3');
+          log.push('continueStep3 disabled after returning: ' + (cont3now ? cont3now.disabled : 'na'));
+        }
+      }
+
       // Enable a software option so continueStep3 becomes active and can be tested
       const softwareInput = dom.window.document.querySelector('#step3 input[name="software"]');
       if (softwareInput) {
@@ -112,18 +133,18 @@ const path = require('path');
         softwareInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
         await new Promise((r) => setTimeout(r, 50));
 
-        const cont3now = dom.window.document.getElementById('continueStep3');
-        if (cont3now && !cont3now.disabled) {
+        const cont3now2 = dom.window.document.getElementById('continueStep3');
+        if (cont3now2 && !cont3now2.disabled) {
           const ev3 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
-          cont3now.dispatchEvent(ev3);
+          cont3now2.dispatchEvent(ev3);
           await new Promise((r) => setTimeout(r, 50));
           log.push('After selecting software and clicking continueStep3 active step id: ' + (dom.window.document.querySelector('.step.active') ? dom.window.document.querySelector('.step.active').id : 'none'));
 
           // Now test back from step4 to step3
-          const back4Btn = dom.window.document.getElementById('backStep4');
-          if (back4Btn) {
+          const back4Btn2 = dom.window.document.getElementById('backStep4');
+          if (back4Btn2) {
             const evb4 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
-            back4Btn.dispatchEvent(evb4);
+            back4Btn2.dispatchEvent(evb4);
             await new Promise((r) => setTimeout(r, 50));
             log.push('After click backStep4 active step id: ' + (dom.window.document.querySelector('.step.active') ? dom.window.document.querySelector('.step.active').id : 'none'));
           }
