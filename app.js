@@ -475,9 +475,11 @@ function updateRecommendedSetup(monthlySoftwareTotal) {
       ? "No cameras configured"
       : "No software selected ($0/month)";
 
-  container.textContent = `Hardware: ${parts.length ? parts.join(" • ") : "No hardware configured"} | Total hardware: ${fmt.format(
-    hardwareTotal
-  )} | Software: ${softwareLine}`;
+  container.innerHTML = `
+    <div>Hardware: ${parts.length ? parts.join(" • ") : "No hardware configured"}</div>
+    <div>Total hardware: ${fmt.format(hardwareTotal)}</div>
+    <div>Software: ${softwareLine}</div>
+  `;
 }
 
 function updateCostComparison() {
@@ -507,13 +509,10 @@ function updateCostComparison() {
 
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
 
-  el.textContent =
-    `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, ` +
-    `Software (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}, ` +
-    `Total: ${fmt.format(currentTotal)} | ` +
-    `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, ` +
-    `Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}, ` +
-    `Total: ${fmt.format(sighthoundTotal)}`;
+  el.innerHTML = `
+    <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Software (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
+    <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
+  `;
 }
 
 function updateSavingsCard() {
