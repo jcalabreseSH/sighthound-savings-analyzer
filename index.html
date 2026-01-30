@@ -9,6 +9,18 @@
     <title>Sighthound Savings Analyzer</title>
 
  <link rel="stylesheet" href="./styles/savings-analyzer.css" />
+ <style>
+/* Cost Breakdown two-column layout */
+.cost-grid{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;justify-content:space-between}
+.cost-column{flex:1 1 45%;min-width:220px;background:transparent;padding:6px;border-radius:6px}
+.cost-column:last-child{text-align:right}
+.cost-title{font-weight:700;margin-bottom:6px}
+.cost-details{color:var(--muted);margin-bottom:4px}
+.cost-total{margin-top:8px;font-size:1.05em;font-weight:800}
+@media (max-width:720px){
+  .cost-column{flex-basis:100%}
+}
+</style>
 </head>
   <!-- Dark mode class injection point - will be replaced with `dark` class based on your site palette -->
   <body class="__DARK_MODE_CLASS__">
