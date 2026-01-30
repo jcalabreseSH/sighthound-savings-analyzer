@@ -510,8 +510,8 @@ function updateCostComparison() {
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
 
   el.innerHTML = `
-    <div><b>Current Setup — Upfront</b>: ${fmt.format(state.currentUpfront)} <br><b> Software (${state.timeframe} mo)</b>: ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><b> Total</b>: ${fmt.format(currentTotal)}</div>
-    <div><b>Sighthound — Hardware</b>: ${fmt.format(hardwareTotal)}<br><b> Software (${state.timeframe} mo)</b>: ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><b> Total</b>: ${fmt.format(sighthoundTotal)}</div>
+    <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Software (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
+    <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
   `;
 }
 
