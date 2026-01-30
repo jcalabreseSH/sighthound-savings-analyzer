@@ -50,9 +50,23 @@ const path = require('path');
     });
 
     await new Promise((res, rej) => {
-      dom.window.document.addEventListener('DOMContentLoaded', () => res());
-      setTimeout(() => rej(new Error('timeout waiting for DOMContentLoaded')), 3000);
+      // wait for full load (ensures module scripts executed)
+      dom.window.addEventListener('load', () => res());
+      setTimeout(() => rej(new Error('timeout waiting for window.load')), 5000);
     });
+
+    // safety wait for module init to finish
+    await new Promise((r) => setTimeout(r, 200));
+
+    // as a fallback, wait until the app sets the global init flag (if present)
+    if (!dom.window.__savings_init_done) {
+      const maxWait = 2000;
+      const start = Date.now();
+      while (!dom.window.__savings_init_done && Date.now() - start < maxWait) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    }
 
     // wait a bit for scripts to run
     await new Promise((r) => setTimeout(r, 1000));
@@ -76,14 +90,17 @@ const path = require('path');
     // Simulate user selecting an option in step1 to get to step2, then click continueStep2
     const step1None = dom.window.document.querySelector('#step1 .option-card[data-value="none"]');
     if (step1None) {
-      step1None.click();
+      // Dispatch a real MouseEvent to better emulate a user's click
+      const ev = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+      step1None.dispatchEvent(ev);
       await new Promise((r) => setTimeout(r, 50));
       const active1 = dom.window.document.querySelector('.step.active');
       log.push('After selecting step1 option active step id: ' + (active1 ? active1.id : 'none'));
     }
 
     if (cont2) {
-      cont2.click();
+      const ev2 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+      cont2.dispatchEvent(ev2);
       await new Promise((r) => setTimeout(r, 50));
       const active = dom.window.document.querySelector('.step.active');
       log.push('After click continueStep2 active step id: ' + (active ? active.id : 'none'));
@@ -97,14 +114,16 @@ const path = require('path');
 
         const cont3now = dom.window.document.getElementById('continueStep3');
         if (cont3now && !cont3now.disabled) {
-          cont3now.click();
+          const ev3 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+          cont3now.dispatchEvent(ev3);
           await new Promise((r) => setTimeout(r, 50));
           log.push('After selecting software and clicking continueStep3 active step id: ' + (dom.window.document.querySelector('.step.active') ? dom.window.document.querySelector('.step.active').id : 'none'));
 
           // Now test back from step4 to step3
           const back4Btn = dom.window.document.getElementById('backStep4');
           if (back4Btn) {
-            back4Btn.click();
+            const evb4 = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, view: dom.window });
+            back4Btn.dispatchEvent(evb4);
             await new Promise((r) => setTimeout(r, 50));
             log.push('After click backStep4 active step id: ' + (dom.window.document.querySelector('.step.active') ? dom.window.document.querySelector('.step.active').id : 'none'));
           }
