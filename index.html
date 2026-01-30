@@ -8,19 +8,7 @@
 
     <title>Sighthound Savings Analyzer</title>
 
- <link rel="stylesheet" href="./styles/savings-analyzer.css" />
- <style>
-/* Cost Breakdown two-column layout */
-.cost-grid{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;justify-content:space-between}
-.cost-column{flex:1 1 45%;min-width:220px;background:transparent;padding:6px;border-radius:6px}
-.cost-column:last-child{text-align:right}
-.cost-title{font-weight:700;margin-bottom:6px}
-.cost-details{color:var(--muted);margin-bottom:4px}
-.cost-total{margin-top:8px;font-size:1.05em;font-weight:800}
-@media (max-width:720px){
-  .cost-column{flex-basis:100%}
-}
-</style>
+    <link rel="stylesheet" href="./styles/savings-analyzer.css" />
 </head>
   <!-- Dark mode class injection point - will be replaced with `dark` class based on your site palette -->
   <body class="__DARK_MODE_CLASS__">
@@ -161,6 +149,10 @@
                   </div>
                 </button>
               </div>
+
+              <div class="step-actions">
+                <button class="btn btn-text btn-back" id="backStep1b" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 2: Camera Count & Hardware -->
@@ -295,10 +287,10 @@
                   <div class="hardware-header" data-astro-cid-j7pv25f6>
                     <div class="hardware-info" data-astro-cid-j7pv25f6>
                       <div class="hardware-label" data-astro-cid-j7pv25f6>
-                        Compute Nodes
+                        Compute Nodes (optional)
                       </div>
                       <div class="hardware-price" data-astro-cid-j7pv25f6>
-                        $3,500 each (supports 4 cameras)
+                        $3,500 each (supports up to 4 cameras)
                       </div>
                     </div>
 
@@ -337,13 +329,17 @@
                 </div>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep2"
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep2"
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <button class="btn btn-text btn-back" id="backStep2" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 3: Software Interest -->
@@ -407,7 +403,7 @@
                   <div class="checkbox-content" data-astro-cid-j7pv25f6>
                     <div class="checkbox-header" data-astro-cid-j7pv25f6>
                       <span class="checkbox-label" data-astro-cid-j7pv25f6>
-                        Both LPR + MMCG
+                        Both LPR + MMCG (SPECIAL RATE)
                       </span>
                       <span class="checkbox-price" data-astro-cid-j7pv25f6>
                         $55/stream/month
@@ -417,14 +413,26 @@
                 </label>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep3"
-                disabled
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <p class="step-helper" data-astro-cid-j7pv25f6>
+                Software is optional — you can skip this step if you don't want any analytics.
+              </p>
+
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep3"
+                  disabled
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <div class="row-actions" data-astro-cid-j7pv25f6>
+                  <button class="btn btn-text btn-back" id="backStep3" data-astro-cid-j7pv25f6>Back</button>
+                  <button class="btn btn-text" id="skipStep3" data-astro-cid-j7pv25f6>Skip for now →</button>
+                </div>
+
+              </div>
             </div>
 
             <!-- Step 4: Current Costs -->
@@ -505,13 +513,17 @@
                 </div>
               </div>
 
-              <button
-                class="btn btn-primary btn-continue"
-                id="continueStep4"
-                data-astro-cid-j7pv25f6
-              >
-                Continue
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-continue"
+                  id="continueStep4"
+                  data-astro-cid-j7pv25f6
+                >
+                  Continue
+                </button>
+
+                <button class="btn btn-text btn-back" id="backStep4" data-astro-cid-j7pv25f6>Back</button>
+              </div>
             </div>
 
             <!-- Step 5: Calculate -->
@@ -525,17 +537,21 @@
                 would cost.
               </p>
 
-              <button
-                class="btn btn-primary btn-lg"
-                id="calculateButton"
-                data-astro-cid-j7pv25f6
-              >
-                Calculate my savings
-              </button>
+              <div class="step-actions">
+                <button
+                  class="btn btn-primary btn-lg"
+                  id="calculateButton"
+                  data-astro-cid-j7pv25f6
+                >
+                  Calculate my savings
+                </button>
 
-              <button class="btn btn-text" id="editAnswers" data-astro-cid-j7pv25f6>
-                Edit my answers
-              </button>
+                <button class="btn btn-text btn-back" id="backStep5" data-astro-cid-j7pv25f6>Back</button>
+
+                <button class="btn btn-text" id="editAnswers" data-astro-cid-j7pv25f6>
+                  Edit my answers
+                </button>
+              </div>
             </div>
           </div>
         </div>

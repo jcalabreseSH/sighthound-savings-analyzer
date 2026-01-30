@@ -40,6 +40,9 @@ function init() {
   updateSelectedSoftware();
   updateContinueStep3State();
   goToStep(1);
+
+  // Signal to external test harnesses that initialization completed
+  try { window.__savings_init_done = true; } catch (e) {}
 }
 
 // Ensure init runs after DOM is ready in all environments (guarded against double-run)
@@ -83,9 +86,55 @@ function attachEventHandlers() {
       return;
     }
 
+    if (btn.id === "skipStep3") {
+      e.preventDefault();
+      // Clear any selected software and advance — software is optional
+      console.log('[savings] skipStep3 clicked: clearing software and advancing');
+      document.querySelectorAll('#step3 input[name="software"]').forEach((input) => {
+        input.checked = false;
+      });
+      state.software = [];
+      updateContinueStep3State();
+      goToStep(4);
+      return;
+    }
+
     if (btn.id === "continueStep4") {
       e.preventDefault();
       goToStep(5);
+      return;
+    }
+
+    // Back buttons (allow going back to previous steps to edit responses)
+    if (btn.id === "backStep1b") {
+      e.preventDefault();
+      goToStep(1);
+      return;
+    }
+
+    if (btn.id === "backStep2") {
+      e.preventDefault();
+      // If user came from 1b (IP cameras), return there; otherwise go to step 1
+      if (state.cameraType === "ip") goToStep("1b");
+      else goToStep(1);
+      return;
+    }
+
+    if (btn.id === "backStep3") {
+      e.preventDefault();
+      goToStep(2);
+      return;
+    }
+
+    if (btn.id === "backStep4") {
+      e.preventDefault();
+      goToStep(3);
+      return;
+    }
+
+    if (btn.id === "backStep5") {
+      e.preventDefault();
+      goToStep(4);
       return;
     }
 
@@ -117,11 +166,16 @@ function attachEventHandlers() {
   });
 
   // Step 1: camera type
-  document.querySelectorAll("#step1 .option-card").forEach((btn) => {
+  const step1Options = document.querySelectorAll("#step1 .option-card");
+  console.log(`[savings] step1 option count: ${step1Options.length}`);
+  step1Options.forEach((btn, idx) => {
+    console.log(`[savings] attaching step1 option handler #${idx} dataset=${btn.dataset.value}`);
     btn.addEventListener("click", (e) => {
+      console.log(`[savings] step1 option clicked dataset=${btn.dataset.value}`);
       e.preventDefault();
       state.cameraType = btn.dataset.value || "";
       selectOptionCard(btn);
+      console.log(`[savings] cameraType set to ${state.cameraType}`);
 
       if (state.cameraType === "ip") {
         goToStep("1b");
@@ -357,6 +411,7 @@ function updateNodeStatus(totalCameras, suggestedNodes) {
 
 // ---------- STEP NAV ----------
 function goToStep(step) {
+  console.log(`[savings] goToStep called with step=${step}`);
   document.querySelectorAll(".step").forEach((el) => el.classList.remove("active"));
 
   const stepId = `step${step}`;
