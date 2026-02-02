@@ -336,11 +336,37 @@ function attachEventHandlers() {
       updateSavingsCard();
     });
   });
-}
-  // Download PDF
-  onClick("downloadPdf", () => {
-    generatePDF();
+
+  // Email PDF modal open/close
+  onClick("emailPdfButton", () => {
+    const modal = document.getElementById("emailModal");
+    if (modal) {
+      modal.classList.add("active");
+      modal.setAttribute("aria-hidden", "false");
+    }
   });
+
+  onClick("emailModalClose", () => {
+    const modal = document.getElementById("emailModal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.setAttribute("aria-hidden", "true");
+    }
+  });
+
+  const emailModal = document.getElementById("emailModal");
+  emailModal?.addEventListener("click", (e) => {
+    if (e.target === emailModal) {
+      emailModal.classList.remove("active");
+      emailModal.setAttribute("aria-hidden", "true");
+    }
+  });
+}
+
+// Download PDF
+onClick("downloadPdf", () => {
+  generatePDF();
+});
 
 // ---------- CAMERA / NODE LOGIC ----------
 function updateCamerasAndNodes() {
