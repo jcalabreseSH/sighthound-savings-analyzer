@@ -621,6 +621,36 @@ async function generatePDF() {
     });
   }
 
+  // Helper: load logo image and convert to data URL for jsPDF
+  function loadLogoAsDataUrl(src) {
+    return new Promise((resolve, reject) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              return reject(new Error("canvas context not available"));
+            }
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL("image/png");
+            resolve(dataUrl);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = (err) => reject(err || new Error("Failed to load logo image"));
+        img.src = src;
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
   const jsPDFCtor = findJsPDF() || await loadJsPDF();
   const jsPDF = jsPDFCtor;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -628,6 +658,21 @@ async function generatePDF() {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
   const contentWidth = pageWidth - margin * 2;
+
+  // Try to place Sighthound logo in the top-right corner of the page
+  // This is best-effort only; if the image can't be loaded we silently skip it.
+  try {
+    const logoDataUrl = await loadLogoAsDataUrl("./assets/sighthound-logo-black.png");
+    const logoWidth = 40; // mm
+    const logoHeight = 10; // mm, approximate aspect ratio
+    const logoX = pageWidth - margin - logoWidth;
+    const logoY = margin - 6; // slightly above title
+    doc.addImage(logoDataUrl, "PNG", logoX, logoY, logoWidth, logoHeight);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[savings] PDF logo not added", e);
+  }
+
   let y = 20;
 
   const fmt = new Intl.NumberFormat("en-US", {
