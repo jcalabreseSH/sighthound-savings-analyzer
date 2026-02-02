@@ -1895,6 +1895,65 @@ label {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* Email modal overlay + content */
+.email-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.email-modal-overlay.active {
+  display: flex;
+}
+
+.email-modal {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px 28px 28px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+}
+
+.email-modal-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.email-modal-subtitle {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.email-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.email-modal-close:hover {
+  color: #111827;
+}
+
+.email-modal-form-wrapper {
+  margin-top: 8px;
+}
+
 @media (max-width: 768px) {
   .hero[data-astro-cid-j7pv25f6] {
     padding: 60px 0 100px;
