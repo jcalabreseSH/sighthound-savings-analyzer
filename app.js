@@ -340,6 +340,10 @@ function attachEventHandlers() {
   // Email PDF modal open/close
   onClick("emailPdfButton", () => {
     const modal = document.getElementById("emailModal");
+    const summaryField = document.getElementById("hardwareEstimateSummary");
+    if (summaryField) {
+      summaryField.value = String(window.__HARDWARE_ESTIMATE_SUMMARY__ || "");
+    }
     if (modal) {
       modal.classList.add("active");
       modal.setAttribute("aria-hidden", "false");
@@ -359,6 +363,61 @@ function attachEventHandlers() {
     if (e.target === emailModal) {
       emailModal.classList.remove("active");
       emailModal.setAttribute("aria-hidden", "true");
+    }
+  });
+
+  // Custom HubSpot form submission from popup
+  const emailForm = document.getElementById("emailEstimateForm");
+  emailForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formEl = e.currentTarget;
+    const portalId = formEl.dataset.portalId;
+    const formId = formEl.dataset.formId;
+
+    const firstname = formEl.querySelector("#emailFirstName")?.value.trim() || "";
+    const lastname = formEl.querySelector("#emailLastName")?.value.trim() || "";
+    const email = formEl.querySelector("#emailAddress")?.value.trim() || "";
+    const summary = formEl.querySelector("#hardwareEstimateSummary")?.value.trim() || "";
+
+    const payload = {
+      fields: [
+        { name: "firstname", value: firstname },
+        { name: "lastname", value: lastname },
+        { name: "email", value: email },
+        { name: "hardware_estimate_summary", value: summary },
+      ],
+      context: {
+        pageUri: window.location.href,
+        pageName: document.title,
+      },
+    };
+
+    try {
+      const resp = await fetch(
+        `https://api.hsforms.com/submissions/v3/integration/submit/${portalId}/${formId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (resp.ok) {
+        formEl.reset();
+        const modal = document.getElementById("emailModal");
+        modal?.classList.remove("active");
+        modal?.setAttribute("aria-hidden", "true");
+        alert("Thanks! We'll email you this analysis shortly.");
+      } else {
+        console.error("HubSpot form submission failed", await resp.text());
+        alert("Something went wrong submitting the form. Please try again.");
+      }
+    } catch (err) {
+      console.error("HubSpot form submission error", err);
+      alert("Something went wrong submitting the form. Please try again.");
     }
   });
 }
@@ -575,6 +634,51 @@ function updateCostComparison() {
     <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Software (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
     <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
   `;
+
+  // Also surface a plain-text summary for the custom HubSpot popup form
+  const setupParts = [];
+  if (state.standardCameras > 0) {
+    setupParts.push(
+      `${state.standardCameras} Standard IP camera${
+        state.standardCameras === 1 ? "" : "s"
+      }`
+    );
+  }
+  if (state.smartCameras > 0) {
+    setupParts.push(
+      `${state.smartCameras} Sighthound Smart camera${
+        state.smartCameras === 1 ? "" : "s"
+      }`
+    );
+  }
+  if (state.computeNodes > 0) {
+    setupParts.push(
+      `${state.computeNodes} Compute node${
+        state.computeNodes === 1 ? "" : "s"
+      }`
+    );
+  }
+  const setupLine =
+    setupParts.length > 0 ? `Setup: ${setupParts.join(", " )}. ` : "";
+
+  const summaryLines = [
+    `Cost comparison over ${state.timeframe} months.`,
+    setupLine ? setupLine.trim() : "",
+    `Current setup — upfront ${fmt.format(state.currentUpfront)},`,
+    `software ${fmt.format(currentMonthlyNormalized * state.timeframe)},`,
+    `total ${fmt.format(currentTotal)}.`,
+    `Sighthound — hardware ${fmt.format(hardwareTotal)},`,
+    `software ${fmt.format(monthlySoftwareTotal * state.timeframe)},`,
+    `total ${fmt.format(sighthoundTotal)}.`,
+  ].filter(Boolean);
+
+  const summary = summaryLines.join("\n");
+
+  try {
+    window.__HARDWARE_ESTIMATE_SUMMARY__ = summary;
+  } catch (e) {
+    // ignore if window is not available (e.g. during server-side rendering)
+  }
 }
 
 function updateSavingsCard() {
