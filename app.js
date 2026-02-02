@@ -457,7 +457,6 @@ function runAnalysis() {
   const monthlySoftwareTotal =
     state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
 
-  updateCompatibilitySummary();
   updateRecommendedSetup(monthlySoftwareTotal);
   updateCostComparison();
   updateSavingsCard();
@@ -466,25 +465,7 @@ function runAnalysis() {
   resultsSection?.scrollIntoView({ behavior: "smooth" });
 }
 
-function updateCompatibilitySummary() {
-  const el = document.getElementById("compatibilityContent");
-  if (!el) return;
 
-  let text = "";
-
-  if (state.cameraType === "ip" && state.ownership === "purchased") {
-    text =
-      "✓ Cameras can be reused. Recommended approach: Keep your existing IP cameras and integrate them with Sighthound's compute nodes. Your existing cameras will work with our system, saving you significant hardware costs.";
-  } else if (state.cameraType === "ip") {
-    text =
-      `⚠ Camera replacement recommended. Recommended approach: Replace with standard IP cameras ($${PRICES.standardCamera.toLocaleString()} each) or upgrade to Sighthound Smart Cameras. New IP cameras provide better compatibility and reliability with our analytics platform.`;
-  } else {
-    text =
-      `✕ New cameras required. Recommended approach: Install Sighthound Smart Cameras ($${PRICES.smartCamera.toLocaleString()} each) for built-in edge processing. Our smart cameras include built-in analytics for maximum performance and reliability.`;
-  }
-
-  el.textContent = text;
-}
 
 function updateRecommendedSetup(monthlySoftwareTotal) {
   const container = document.getElementById("setupGrid");
@@ -531,7 +512,7 @@ function updateRecommendedSetup(monthlySoftwareTotal) {
       : "No software selected ($0/month)";
 
   container.innerHTML = `
-    <div>Hardware: ${parts.length ? parts.join(" • ") : "No hardware configured"}</div>
+    <div>${parts.length ? parts.join('<br>') : "No hardware configured"}</div>
     <div>Total hardware: ${fmt.format(hardwareTotal)}</div>
     <div>Software: ${softwareLine}</div>
   `;
