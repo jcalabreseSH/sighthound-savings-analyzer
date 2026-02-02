@@ -623,74 +623,208 @@ async function generatePDF() {
 
   const jsPDFCtor = findJsPDF() || await loadJsPDF();
   const jsPDF = jsPDFCtor;
-  const doc = new jsPDF();
-  const pad = 14;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const contentWidth = pageWidth - margin * 2;
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.text("Sighthound Savings Analysis", pad, y);
-  y += 10;
-
-  doc.setFontSize(11);
-  doc.text(`Timeframe: ${state.timeframe} months`, pad, y);
-  y += 7;
-  doc.text(`Camera type: ${state.cameraType || "N/A"}`, pad, y);
-  y += 7;
-  doc.text(`Ownership: ${state.ownership || "N/A"}`, pad, y);
-  y += 7;
-  doc.text(`Standard cameras: ${state.standardCameras}`, pad, y);
-  y += 6;
-  doc.text(`Smart cameras: ${state.smartCameras}`, pad, y);
-  y += 6;
-  doc.text(`Compute nodes: ${state.computeNodes}`, pad, y);
-  y += 8;
-
-  doc.text("Selected software:", pad, y);
-  y += 6;
-  if (state.software.length) {
-    state.software.forEach((s) => {
-      doc.text(`- ${s.type.toUpperCase()} @ $${s.price}/stream/mo`, pad + 4, y);
-      y += 6;
-    });
-  } else {
-    doc.text("- None", pad + 4, y);
-    y += 6;
-  }
-
-  y += 4;
+  const fmt = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 
   // Recompute numeric breakdowns (same logic used in UI)
   const totalCameras = state.standardCameras + state.smartCameras;
-  const monthlySoftwareTotal = state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
+  const monthlySoftwareTotal =
+    state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
   const hardwareStandard = state.standardCameras * PRICES.standardCamera;
   const hardwareSmart = state.smartCameras * PRICES.smartCamera;
   const hardwareNodes = state.computeNodes * PRICES.node;
   const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
   const sighthoundTotal = hardwareTotal + monthlySoftwareTotal * state.timeframe;
-  const currentMonthlyNormalized = state.frequency === "annual" ? state.currentMonthly / 12 : state.currentMonthly;
+  const currentMonthlyNormalized =
+    state.frequency === "annual" ? state.currentMonthly / 12 : state.currentMonthly;
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
   const savings = currentTotal - sighthoundTotal;
+  const savingsPerMonth = savings / (state.timeframe || 1);
 
-  doc.setFontSize(13);
-  doc.text("Cost Breakdown", pad, y);
-  y += 8;
-  doc.setFontSize(11);
-  doc.text(`Current total (${state.timeframe} mo): $${Math.round(currentTotal).toLocaleString()}`, pad, y);
-  y += 6;
-  doc.text(`Sighthound total (${state.timeframe} mo): $${Math.round(sighthoundTotal).toLocaleString()}`, pad, y);
-  y += 8;
+  // Helpers for card-style layout
+  function drawCard(title, lines, accentColor) {
+    const cardPadding = 4;
+    const innerWidth = contentWidth - cardPadding * 2;
 
-  if (savings > 0) {
-    doc.setTextColor(0, 128, 0);
-    doc.setFontSize(14);
-    doc.text(`Estimated savings: $${Math.round(savings).toLocaleString()}`, pad, y);
-    doc.setTextColor(0, 0, 0);
-  } else {
-    doc.setTextColor(200, 0, 0);
-    doc.setFontSize(14);
-    doc.text(`Additional cost: $${Math.round(Math.abs(savings)).toLocaleString()}`, pad, y);
-    doc.setTextColor(0, 0, 0);
+    const wrappedLines = lines.flatMap((line) =>
+      doc.splitTextToSize(line, innerWidth)
+    );
+
+    const lineHeight = 4.2;
+    const minHeight = 16;
+    const contentHeight = wrappedLines.length * lineHeight + 6;
+    const cardHeight = Math.max(minHeight, contentHeight + cardPadding * 2);
+    const x = margin;
+    const top = y;
+
+    // Card background & border
+    doc.setDrawColor(230, 232, 240);
+    doc.setFillColor(248, 249, 252);
+    doc.roundedRect(x, top, contentWidth, cardHeight, 2, 2, "FD");
+
+    // Accent bar on the left
+    const [r, g, b] = accentColor;
+    doc.setFillColor(r, g, b);
+    doc.rect(x, top, 1.8, cardHeight, "F");
+
+    // Title
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(12);
+    doc.text(title, x + cardPadding + 2, top + 6);
+
+    // Body
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99);
+    let textY = top + 11;
+    wrappedLines.forEach((line) => {
+      doc.text(line, x + cardPadding + 2, textY);
+      textY += lineHeight;
+    });
+
+    y = top + cardHeight + 5;
   }
+
+  // Title & subtitle
+  doc.setFontSize(18);
+  doc.setTextColor(17, 24, 39);
+  doc.text("Sighthound Savings Summary", margin, y);
+  y += 8;
+
+  doc.setFontSize(11);
+  doc.setTextColor(107, 114, 128);
+  const subtitleParts = [];
+  if (totalCameras > 0) {
+    subtitleParts.push(
+      `${totalCameras} camera${totalCameras === 1 ? "" : "s"}`
+    );
+  }
+  subtitleParts.push(`${state.timeframe} month analysis`);
+  doc.text(subtitleParts.join(" • "), margin, y);
+  y += 8;
+
+  // Card 1: Savings summary (primary highlight)
+  if (savings > 0) {
+    drawCard(
+      "Your savings at a glance",
+      [
+        `Net savings over ${state.timeframe} months: ${fmt.format(savings)}.`,
+        `Average monthly impact: ${fmt.format(savingsPerMonth)} less than today.`,
+      ],
+      [34, 197, 94] // bright green accent
+    );
+  } else if (savings < 0) {
+    drawCard(
+      "Additional investment",
+      [
+        `Additional investment over ${state.timeframe} months: ${fmt.format(Math.abs(savings))}.`,
+        "Reflects upgraded cameras, compute, and analytics versus your current setup.",
+      ],
+      [239, 68, 68] // red accent
+    );
+  } else {
+    drawCard(
+      "Neutral comparison",
+      [
+        "Your projected Sighthound costs are roughly in line with what you pay today.",
+        "Adjust camera counts, analytics selection, or timeframe to explore different scenarios.",
+      ],
+      [107, 114, 128] // neutral gray accent
+    );
+  }
+
+  // Card 2: Cost breakdown (mirrors on-screen calculator layout)
+  const breakdownLines = [];
+
+  // Hardware lines like the UI: per-component plus total
+  if (state.standardCameras > 0) {
+    breakdownLines.push(
+      `${state.standardCameras} × Standard IP camera${
+        state.standardCameras > 1 ? "s" : ""
+      } (${fmt.format(hardwareStandard)})`
+    );
+  }
+  if (state.smartCameras > 0) {
+    breakdownLines.push(
+      `${state.smartCameras} × Sighthound Smart camera${
+        state.smartCameras > 1 ? "s" : ""
+      } (${fmt.format(hardwareSmart)})`
+    );
+  }
+  if (state.computeNodes > 0) {
+    breakdownLines.push(
+      `${state.computeNodes} × Compute node${
+        state.computeNodes > 1 ? "s" : ""
+      } (${state.computeNodes * CAMERAS_PER_NODE} camera capacity) (${fmt.format(
+        hardwareNodes
+      )})`
+    );
+  }
+
+  breakdownLines.push(`Total hardware: ${fmt.format(hardwareTotal)}`);
+
+  // Software line: selected analytics and monthly total
+  const softwareLinePdf =
+    totalCameras > 0 && state.software.length > 0
+      ? `Software: ${state.software
+          .map((s) => `${s.type.toUpperCase()} (${fmt.format(s.price)}/stream/mo)`)
+          .join(", ")} -> ${fmt.format(monthlySoftwareTotal)}/month total`
+      : totalCameras === 0
+      ? "Software: No cameras configured"
+      : "Software: No software selected ($0/month)";
+
+  breakdownLines.push(softwareLinePdf);
+  breakdownLines.push("");
+
+  // Side-by-side style totals for the selected timeframe (no 12/24/36 toggle)
+  breakdownLines.push(
+    `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, Software (${state.timeframe} mo): ${fmt.format(
+      currentMonthlyNormalized * state.timeframe
+    )}, Total: ${fmt.format(currentTotal)}`
+  );
+  breakdownLines.push(
+    `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, Software (${state.timeframe} mo): ${fmt.format(
+      monthlySoftwareTotal * state.timeframe
+    )}, Total: ${fmt.format(sighthoundTotal)}`
+  );
+
+  drawCard("Cost breakdown", breakdownLines, [16, 185, 129]);
+
+  // Card 3: Configuration snapshot
+  drawCard(
+    "Configuration snapshot",
+    [
+      `Camera type: ${state.cameraType || "Not specified"}`,
+      `Ownership: ${state.ownership || "Not specified"}`,
+      `Standard IP cameras: ${state.standardCameras}`,
+      `Smart cameras: ${state.smartCameras}`,
+      `Compute nodes: ${state.computeNodes} (up to ${
+        state.computeNodes * CAMERAS_PER_NODE || 0
+      } cameras total capacity)`,
+    ],
+    [59, 130, 246]
+  );
+
+  // Card 4: What each component does
+  drawCard(
+    "What each component does",
+    [
+      "Standard IP cameras – traditional network cameras that provide general coverage across your site.",
+      "Sighthound Smart cameras – AI-ready cameras with advanced on-device analytics for higher-value streams.",
+      "Compute nodes – small servers that aggregate multiple camera feeds (up to 4 per node) and run Sighthound analytics.",
+    ],
+    [79, 70, 229]
+  );
 
   doc.save("savings-analysis.pdf");
 }
