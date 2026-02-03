@@ -1727,7 +1727,9 @@ label {
   cursor: pointer;
 }
 .checkbox-card[data-astro-cid-j7pv25f6]
-  input[data-astro-cid-j7pv25f6][type="checkbox"] {
+  input[data-astro-cid-j7pv25f6][type="checkbox"],
+.checkbox-card[data-astro-cid-j7pv25f6]
+  input[data-astro-cid-j7pv25f6][type="radio"] {
   position: absolute;
   opacity: 0;
 }
@@ -1744,6 +1746,9 @@ label {
 }
 .checkbox-card[data-astro-cid-j7pv25f6]
   input[data-astro-cid-j7pv25f6][type="checkbox"]:checked
+  + .checkbox-content[data-astro-cid-j7pv25f6],
+.checkbox-card[data-astro-cid-j7pv25f6]
+  input[data-astro-cid-j7pv25f6][type="radio"]:checked
   + .checkbox-content[data-astro-cid-j7pv25f6] {
   border-color: #4f60dc;
   background: #f0f2ff;
