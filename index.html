@@ -73,87 +73,36 @@
               Step 1 of 5
             </div>
 
-            <!-- Step 1: Camera Infrastructure -->
+            <!-- Step 1: Camera Scenario -->
             <div class="step active" id="step1" data-astro-cid-j7pv25f6>
               <h2 class="step-title" data-astro-cid-j7pv25f6>
-                Do you already have cameras installed?
+                What best describes your current camera setup?
               </h2>
 
               <div class="options-grid" data-astro-cid-j7pv25f6>
-                <button class="option-card" data-value="ip" data-astro-cid-j7pv25f6>
+                <!-- Scenario A -->
+                <button class="option-card" data-value="scenario-a" data-astro-cid-j7pv25f6>
+                  <div class="option-icon" data-astro-cid-j7pv25f6>🤖</div>
+                  <div class="option-label" data-astro-cid-j7pv25f6>
+                    Smart / AI cameras with built-in analytics
+                  </div>
+                </button>
+
+                <!-- Scenario B -->
+                <button class="option-card" data-value="scenario-b" data-astro-cid-j7pv25f6>
                   <div class="option-icon" data-astro-cid-j7pv25f6>📹</div>
                   <div class="option-label" data-astro-cid-j7pv25f6>
-                    Yes, IP cameras
+                    Standard IP cameras (no advanced analytics)
                   </div>
                 </button>
 
-                <button
-                  class="option-card"
-                  data-value="non-ip"
-                  data-astro-cid-j7pv25f6
-                >
-                  <div class="option-icon" data-astro-cid-j7pv25f6>📼</div>
-                  <div class="option-label" data-astro-cid-j7pv25f6>
-                    Yes, but non-IP cameras
-                  </div>
-                </button>
-
-                <button
-                  class="option-card"
-                  data-value="none"
-                  data-astro-cid-j7pv25f6
-                >
+                <!-- Scenario C -->
+                <button class="option-card" data-value="scenario-c" data-astro-cid-j7pv25f6>
                   <div class="option-icon" data-astro-cid-j7pv25f6>➕</div>
                   <div class="option-label" data-astro-cid-j7pv25f6>
-                    No, we need cameras
+                    We don't have cameras yet (new deployment)
                   </div>
                 </button>
-              </div>
-            </div>
-
-            <!-- Step 1b: Ownership (conditional) -->
-            <div class="step" id="step1b" data-astro-cid-j7pv25f6>
-              <h2 class="step-title" data-astro-cid-j7pv25f6>
-                Were your cameras purchased outright or tied to a subscription?
-              </h2>
-
-              <div class="options-grid" data-astro-cid-j7pv25f6>
-                <button
-                  class="option-card"
-                  data-value="purchased"
-                  data-astro-cid-j7pv25f6
-                >
-                  <div class="option-icon" data-astro-cid-j7pv25f6>💰</div>
-                  <div class="option-label" data-astro-cid-j7pv25f6>
-                    Purchased outright
-                  </div>
-                </button>
-
-                <button
-                  class="option-card"
-                  data-value="subscription"
-                  data-astro-cid-j7pv25f6
-                >
-                  <div class="option-icon" data-astro-cid-j7pv25f6>🔄</div>
-                  <div class="option-label" data-astro-cid-j7pv25f6>
-                    Subscription / bundled
-                  </div>
-                </button>
-
-                <button
-                  class="option-card"
-                  data-value="unsure"
-                  data-astro-cid-j7pv25f6
-                >
-                  <div class="option-icon" data-astro-cid-j7pv25f6>❓</div>
-                  <div class="option-label" data-astro-cid-j7pv25f6>
-                    Not sure
-                  </div>
-                </button>
-              </div>
-
-              <div class="step-actions">
-                <button class="btn btn-text btn-back" id="backStep1b" data-astro-cid-j7pv25f6>Back</button>
               </div>
             </div>
 

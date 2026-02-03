@@ -1558,6 +1558,14 @@ label {
   font-weight: 600;
   color: #1a1d38;
 }
+
+.option-helper[data-astro-cid-j7pv25f6] {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+  text-align: left;
+}
 .hardware-config[data-astro-cid-j7pv25f6] {
   background: #f8f9fb;
   border-radius: 12px;

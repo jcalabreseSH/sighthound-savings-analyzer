@@ -106,17 +106,9 @@ function attachEventHandlers() {
     }
 
     // Back buttons (allow going back to previous steps to edit responses)
-    if (btn.id === "backStep1b") {
-      e.preventDefault();
-      goToStep(1);
-      return;
-    }
-
     if (btn.id === "backStep2") {
       e.preventDefault();
-      // If user came from 1b (IP cameras), return there; otherwise go to step 1
-      if (state.cameraType === "ip") goToStep("1b");
-      else goToStep(1);
+      goToStep(1);
       return;
     }
 
@@ -165,7 +157,7 @@ function attachEventHandlers() {
     calculatorSection?.scrollIntoView({ behavior: "smooth" });
   });
 
-  // Step 1: camera type
+  // Step 1: camera scenario
   const step1Options = document.querySelectorAll("#step1 .option-card");
   console.log(`[savings] step1 option count: ${step1Options.length}`);
   step1Options.forEach((btn, idx) => {
@@ -176,21 +168,6 @@ function attachEventHandlers() {
       state.cameraType = btn.dataset.value || "";
       selectOptionCard(btn);
       console.log(`[savings] cameraType set to ${state.cameraType}`);
-
-      if (state.cameraType === "ip") {
-        goToStep("1b");
-      } else {
-        goToStep(2);
-      }
-    });
-  });
-
-  // Step 1b: ownership
-  document.querySelectorAll("#step1b .option-card").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      state.ownership = btn.dataset.value || "";
-      selectOptionCard(btn);
       goToStep(2);
     });
   });
