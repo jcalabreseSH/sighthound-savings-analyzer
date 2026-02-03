@@ -2016,6 +2016,27 @@ label {
 .email-modal-submit {
   width: 100%;
   margin-top: 8px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+  background: #4f60dc;
+  color: #fff;
+}
+
+.email-modal-submit:hover:not(:disabled) {
+  background: #3d4ec7;
+  box-shadow: 0 8px 16px #4f60dc4d;
+}
+
+.email-modal-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .email-modal-helper {
