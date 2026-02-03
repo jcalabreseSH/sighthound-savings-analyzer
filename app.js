@@ -110,23 +110,6 @@ function applyScenarioBehavior() {
   if (hardwareConfig) hardwareConfig.style.opacity = "1";
   if (step4) step4.style.display = "";
 
-  if (isScenarioB()) {
-    // Scenario B  cameras are assumed existing; lock counts and de-emphasize purchase UI.
-    if (stdInput) stdInput.disabled = true;
-    if (smartInput) smartInput.disabled = true;
-    stdButtons.forEach((b) => {
-      b.disabled = true;
-      b.style.opacity = "0.4";
-      b.style.cursor = "not-allowed";
-    });
-    smartButtons.forEach((b) => {
-      b.disabled = true;
-      b.style.opacity = "0.4";
-      b.style.cursor = "not-allowed";
-    });
-    if (hardwareConfig) hardwareConfig.style.opacity = "0.8";
-  }
-
   if (isScenarioC()) {
     // Scenario C  new deployment, no current-cost step.
     if (step4) step4.style.display = "none";
