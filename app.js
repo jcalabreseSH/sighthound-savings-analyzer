@@ -631,8 +631,8 @@ function updateCostComparison() {
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
 
   el.innerHTML = `
-    <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Software (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
-    <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
+    <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Monthly (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
+    <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Monthly Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
   `;
 
   // Also surface a plain-text summary for the custom HubSpot popup form
@@ -665,11 +665,11 @@ function updateCostComparison() {
     `Cost comparison over ${state.timeframe} months.`,
     setupLine ? setupLine.trim() : "",
     `Current setup — upfront ${fmt.format(state.currentUpfront)},`,
-    `software ${fmt.format(currentMonthlyNormalized * state.timeframe)},`,
-    `total ${fmt.format(currentTotal)}.`,
+    `Monthly ${fmt.format(currentMonthlyNormalized * state.timeframe)},`,
+    `Total ${fmt.format(currentTotal)}.`,
     `Sighthound — hardware ${fmt.format(hardwareTotal)},`,
-    `software ${fmt.format(monthlySoftwareTotal * state.timeframe)},`,
-    `total ${fmt.format(sighthoundTotal)}.`,
+    `Monthly Software ${fmt.format(monthlySoftwareTotal * state.timeframe)},`,
+    `Total ${fmt.format(sighthoundTotal)}.`,
   ].filter(Boolean);
 
   const summary = summaryLines.join("\n");
@@ -963,12 +963,12 @@ async function generatePDF() {
 
   // Side-by-side style totals for the selected timeframe (no 12/24/36 toggle)
   breakdownLines.push(
-    `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, Software (${state.timeframe} mo): ${fmt.format(
+    `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, Monthly (${state.timeframe} mo): ${fmt.format(
       currentMonthlyNormalized * state.timeframe
     )}, Total: ${fmt.format(currentTotal)}`
   );
   breakdownLines.push(
-    `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, Software (${state.timeframe} mo): ${fmt.format(
+    `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, Monthly Software (${state.timeframe} mo): ${fmt.format(
       monthlySoftwareTotal * state.timeframe
     )}, Total: ${fmt.format(sighthoundTotal)}`
   );
