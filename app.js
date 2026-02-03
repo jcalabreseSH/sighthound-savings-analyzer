@@ -77,6 +77,15 @@ function isScenarioC() {
   return state.scenario === "C";
 }
 
+// Optional, derived "assumption mode" for readability in logs and branching
+// A → "replace", B → "reuse", C → "new".
+function getScenarioMode() {
+  if (isScenarioA()) return "replace";
+  if (isScenarioB()) return "reuse";
+  if (isScenarioC()) return "new";
+  return "";
+}
+
 function setScenarioFromCameraType(value) {
   state.cameraType = value || "";
   if (value === "scenario-a") state.scenario = "A";
@@ -86,15 +95,44 @@ function setScenarioFromCameraType(value) {
 }
 
 function applyScenarioBehavior() {
-  // Step 2 hardware controls
+  // Step 2 hardware controls and helper copy
   const stdInput = document.getElementById("standardCameras");
   const smartInput = document.getElementById("smartCameras");
   const stdButtons = document.querySelectorAll('[data-target="standardCameras"]');
   const smartButtons = document.querySelectorAll('[data-target="smartCameras"]');
   const hardwareConfig = document.querySelector(".hardware-config");
   const step4 = document.getElementById("step4");
+  const step2Helper = document.querySelector("#step2 .step-helper");
+  const smartHardwareItem = smartInput ? smartInput.closest(".hardware-item") : null;
+  const stdPriceEl = document.querySelector("#step2 .hardware-item .hardware-price");
 
-  // Default: everything enabled & visible
+  const inScenarioB = isScenarioB();
+
+  // Scenario-specific helper copy for Step 2
+  if (step2Helper) {
+    if (isScenarioA()) {
+      step2Helper.textContent = "Select the camera types and quantities you need.";
+    } else if (inScenarioB) {
+      step2Helper.textContent = "How many Standard IP cameras will you reuse?";
+    } else if (isScenarioC()) {
+      step2Helper.textContent = "How many cameras do you need for this new deployment?";
+    } else {
+      step2Helper.textContent = "Select the camera types and quantities you need.";
+    }
+  }
+
+  // Scenario-specific pricing label for Standard IP cameras in Step 2
+  if (stdPriceEl) {
+    if (inScenarioB) {
+      // Scenario B: reuse path – do not show $250 price for existing Standard IP cameras
+      stdPriceEl.textContent = "Existing hardware (already owned)";
+    } else {
+      // Other scenarios: show normal unit price
+      stdPriceEl.textContent = "$250 each";
+    }
+  }
+
+  // Default: everything enabled & visible (scenario branches may hide Smart cameras for reuse)
   if (stdInput) stdInput.disabled = false;
   if (smartInput) smartInput.disabled = false;
   stdButtons.forEach((b) => {
@@ -109,9 +147,45 @@ function applyScenarioBehavior() {
   });
   if (hardwareConfig) hardwareConfig.style.opacity = "1";
   if (step4) step4.style.display = "";
+  if (smartHardwareItem) smartHardwareItem.style.display = "";
 
-  if (isScenarioC()) {
-    // Scenario C  new deployment, no current-cost step.
+  // Normalize camera counts based on current inputs
+  const stdCount = stdInput ? parseInt(stdInput.value, 10) || 0 : state.standardCameras;
+  const smartCount = smartInput ? parseInt(smartInput.value, 10) || 0 : state.smartCameras;
+  const totalCameras = stdCount + smartCount;
+
+  // Scenario A (replace): keep total camera count, map entirely to Standard IP for Sighthound side.
+  if (isScenarioA()) {
+    const cameraCount = totalCameras > 0 ? totalCameras : state.standardCameras + state.smartCameras;
+    state.standardCameras = cameraCount;
+    state.smartCameras = 0;
+    if (stdInput) stdInput.value = String(state.standardCameras);
+    if (smartInput) smartInput.value = "0";
+    updateCamerasAndNodes();
+  }
+
+  // Scenario B (reuse / upgrade): always treat Standard IP cameras as existing hardware
+  // and hide Smart camera purchase UI in the primary path.
+  if (inScenarioB) {
+    const cameraCount = totalCameras > 0 ? totalCameras : state.standardCameras + state.smartCameras;
+    state.standardCameras = cameraCount;
+    state.smartCameras = 0;
+    if (stdInput) stdInput.value = String(state.standardCameras);
+    if (smartInput) smartInput.value = "0";
+    if (smartHardwareItem) smartHardwareItem.style.display = "none";
+    updateCamerasAndNodes();
+  }
+
+    if (isScenarioC()) {
+      // Scenario C — new deployment; treat all cameras as new Standard IP by default.
+    const cameraCount = totalCameras > 0 ? totalCameras : state.standardCameras + state.smartCameras;
+    state.standardCameras = cameraCount;
+    state.smartCameras = 0;
+    if (stdInput) stdInput.value = String(state.standardCameras);
+    if (smartInput) smartInput.value = "0";
+    updateCamerasAndNodes();
+
+    // Scenario C — no current-cost step.
     if (step4) step4.style.display = "none";
     // Clear any current-cost values, since they are not relevant here.
     state.currentMonthly = 0;
@@ -141,7 +215,13 @@ function attachEventHandlers() {
         alert("Please enter at least one camera for a new deployment.");
         return;
       }
-      goToStep(3);
+      // After camera config, go to software step.
+      // C: logical 2 → 3; A/B: logical 3 → 4.
+      if (isScenarioC()) {
+        goToScenarioStep(3);
+      } else {
+        goToScenarioStep(4);
+      }
       return;
     }
 
@@ -150,8 +230,8 @@ function attachEventHandlers() {
       updateSelectedSoftware();
       updateContinueStep3State();
       if (state.software.length === 0) return;
-      // OPTION C skips current-cost step and goes straight to calculation
-      goToStep(isScenarioC() ? 5 : 4);
+      // All scenarios go straight to the calculate step after software.
+      goToScenarioStep(5);
       return;
     }
 
@@ -164,39 +244,71 @@ function attachEventHandlers() {
       });
       state.software = [];
       updateContinueStep3State();
-      goToStep(isScenarioC() ? 5 : 4);
+      // Skip directly to calculate step for all scenarios.
+      goToScenarioStep(5);
       return;
     }
 
     if (btn.id === "continueStep4") {
       e.preventDefault();
-      goToStep(5);
+      // For A/B, Step 4 (current costs) is logical Step 2; next is camera config (logical 3).
+      // For C (if ever shown), treat it as the original Step 4 and go to calculate.
+      if (isScenarioA() || isScenarioB()) {
+        goToScenarioStep(3);
+      } else {
+        goToScenarioStep(5);
+      }
       return;
     }
 
     // Back buttons (allow going back to previous steps to edit responses)
     if (btn.id === "backStep2") {
       e.preventDefault();
-      goToStep(1);
+      // From camera config, go back to the immediately prior logical step:
+      // - Scenario C: cameras are logical Step 2 → back to Step 1 (scenario picker).
+      // - Scenarios A/B: cameras are logical Step 3 → back to Step 2 (current costs).
+      if (isScenarioC()) {
+        goToScenarioStep(1);
+      } else {
+        goToScenarioStep(2);
+      }
       return;
     }
 
     if (btn.id === "backStep3") {
       e.preventDefault();
-      goToStep(2);
+      // From software, go back to camera config in all scenarios.
+      // C: logical 3 → 2; A/B: logical 4 → 3.
+      if (isScenarioC()) {
+        goToScenarioStep(2);
+      } else {
+        goToScenarioStep(3);
+      }
       return;
     }
 
     if (btn.id === "backStep4") {
       e.preventDefault();
-      goToStep(3);
+      // For A/B, Step 4 is logical Step 2; go back to Step 1.
+      // For C (original order), go back to software (logical 3).
+      if (isScenarioA() || isScenarioB()) {
+        goToScenarioStep(1);
+      } else {
+        goToScenarioStep(3);
+      }
       return;
     }
 
     if (btn.id === "backStep5") {
       e.preventDefault();
-      // OPTION C has no current-cost step; go back to software instead
-      goToStep(isScenarioC() ? 3 : 4);
+      // Go back to the previous logical step's content:
+      // - Scenario C: calculate (5) → software (3)
+      // - Scenarios A/B: calculate (5) → software (4)
+      if (isScenarioC()) {
+        goToScenarioStep(3);
+      } else {
+        goToScenarioStep(4);
+      }
       return;
     }
 
@@ -223,7 +335,7 @@ function attachEventHandlers() {
   // Scroll to calculator + show step 1
   onClick("startAnalysis", () => {
     resultsSection?.classList.remove("active");
-    goToStep(1);
+    goToScenarioStep(1);
     calculatorSection?.scrollIntoView({ behavior: "smooth" });
   });
 
@@ -236,10 +348,24 @@ function attachEventHandlers() {
       console.log(`[savings] step1 option clicked dataset=${btn.dataset.value}`);
       e.preventDefault();
       setScenarioFromCameraType(btn.dataset.value || "");
+
+      // Scenario B reset rules when user switches into this path
+      if (isScenarioB()) {
+        // Reset Smart cameras to 0 for reuse path
+        state.smartCameras = 0;
+        const smartInputEl = document.getElementById("smartCameras");
+        if (smartInputEl) smartInputEl.value = "0";
+        // Turn auto-add nodes ON and let capacity logic suggest nodes
+        state.autoAddNodes = true;
+        const autoToggle = document.getElementById("autoAddNodes");
+        if (autoToggle) autoToggle.checked = true;
+      }
+
       selectOptionCard(btn);
-      console.log(`[savings] scenario set to ${state.scenario}, cameraType=${state.cameraType}`);
+      console.log(`[savings] scenario set to ${state.scenario} (mode=${getScenarioMode()}), cameraType=${state.cameraType}`);
       applyScenarioBehavior();
-      goToStep(2);
+      // After picking a scenario, advance to logical Step 2 (scenario-aware mapping).
+      goToScenarioStep(2);
     });
   });
 
@@ -321,7 +447,7 @@ function attachEventHandlers() {
     updateCamerasAndNodes();
   });
 
-  // Step 2 3 3 (delegated handler above owns scenario-specific behavior)
+  // Step 2 → next: delegate to scenario-aware navigation (see body click handler above)
   onClick("continueStep2", () => {
     const totalCameras =
       (parseInt(document.getElementById("standardCameras")?.value, 10) || 0) +
@@ -330,7 +456,11 @@ function attachEventHandlers() {
       alert("Please enter at least one camera for a new deployment.");
       return;
     }
-    goToStep(3);
+    if (isScenarioC()) {
+      goToScenarioStep(3);
+    } else {
+      goToScenarioStep(4);
+    }
   });
 
   // Step 3 software checkboxes
@@ -342,11 +472,11 @@ function attachEventHandlers() {
   });
 
   onClick("continueStep3", () => {
-    // safeguard: dont advance if nothing selected
+    // safeguard: don't advance if nothing selected
     updateSelectedSoftware();
     updateContinueStep3State();
     if (state.software.length === 0) return;
-    goToStep(isScenarioC() ? 5 : 4);
+    goToScenarioStep(5);
   });
 
   // Current cost inputs
@@ -360,7 +490,19 @@ function attachEventHandlers() {
 
   document.querySelectorAll('input[name="frequency"]').forEach((input) => {
     input.addEventListener("change", (ev) => {
-      state.frequency = ev.target.value === "annual" ? "annual" : "monthly";
+      const value = ev.target.value === "annual" ? "annual" : "monthly";
+      state.frequency = value;
+
+      // Update the Step 4 label so it matches the selected billing frequency
+      const currentMonthlyLabel = document.querySelector('label[for="currentMonthly"]');
+      if (currentMonthlyLabel) {
+        currentMonthlyLabel.textContent =
+          value === "annual" ? "Annual software cost" : "Monthly software cost";
+      }
+
+      // If results are visible, refresh comparison and savings so math follows the new frequency
+      updateCostComparison();
+      updateSavingsCard();
     });
   });
 
@@ -372,7 +514,7 @@ function attachEventHandlers() {
   // Edit answers
   onClick("editAnswers", () => {
     resultsSection?.classList.remove("active");
-    goToStep(1);
+    goToScenarioStep(1);
     calculatorSection?.scrollIntoView({ behavior: "smooth" });
   });
 
@@ -536,46 +678,67 @@ function updateNodeStatus(totalCameras, suggestedNodes) {
   if (totalCameras === 0) {
     nodeStatus.className = "node-status neutral";
     nodeStatus.textContent =
-      "Each compute node supports up to 4 cameras. Your configuration requires 0 node(s).";
+      "Each compute node supports up to 4 camera streams. Your configuration requires 0 node(s).";
   } else if (state.computeNodes === 0) {
     nodeStatus.className = "node-status info";
     nodeStatus.textContent =
-      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+      `Each compute node supports up to 4 camera streams. Your configuration requires ${requiredNodes} node${
         requiredNodes === 1 ? "" : "s"
       }. No nodes selected yet.`;
   } else if (capacity < totalCameras) {
     nodeStatus.className = "node-status warning";
     nodeStatus.textContent =
-      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+      `Each compute node supports up to 4 camera streams. Your configuration requires ${requiredNodes} node${
         requiredNodes === 1 ? "" : "s"
-      }, but selected nodes only support ${capacity} cameras for ${totalCameras} configured.`;
+      }, but selected nodes only support ${capacity} camera stream${capacity === 1 ? "" : "s"} for ${totalCameras} configured.`;
   } else {
     nodeStatus.className = "node-status success";
     nodeStatus.textContent =
-      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+      `Each compute node supports up to 4 camera streams. Your configuration requires ${requiredNodes} node${
         requiredNodes === 1 ? "" : "s"
-      }. Selected nodes can support up to ${capacity} camera${capacity === 1 ? "" : "s"}.`;
+      }. Selected nodes can support up to ${capacity} camera stream${capacity === 1 ? "" : "s"}.`;
   }
 }
 
 // ---------- STEP NAV ----------
-function goToStep(step) {
-  console.log(`[savings] goToStep called with step=${step}`);
+// `goToStep` moves to a concrete DOM step id (step1, step2, ...).
+// `goToScenarioStep` works in logical steps (1–5) and remaps for scenarios A/B.
+function goToStep(step, logicalStepOverride) {
+  console.log(`[savings] goToStep called with step=${step}, logical=${logicalStepOverride}`);
   document.querySelectorAll(".step").forEach((el) => el.classList.remove("active"));
 
   const stepId = `step${step}`;
   const stepElement = document.getElementById(stepId);
   if (stepElement) stepElement.classList.add("active");
 
-  // Progress bar only tracks 1–5
+  // Progress bar only tracks 1–5 (logical steps)
   const totalSteps = 5;
-  const numericStep = step === "1b" ? 1 : (parseInt(step, 10) || 1);
+  const numericStep =
+    logicalStepOverride != null
+      ? logicalStepOverride
+      : step === "1b"
+      ? 1
+      : (parseInt(step, 10) || 1);
 
   const progress = (numericStep / totalSteps) * 100;
   if (progressFill) progressFill.style.width = `${progress}%`;
   if (progressText) progressText.textContent = `Step ${numericStep} of ${totalSteps}`;
 
   state.step = step;
+}
+
+function goToScenarioStep(logicalStep) {
+  // Reorder steps for scenarios A and B only:
+  // A/B: 1 (step1) → 2 (step4) → 3 (step2) → 4 (step3) → 5 (step5)
+  // C:   1 (step1) → 2 (step2) → 3 (step3) → 4 (step4) → 5 (step5)
+  let domStep = logicalStep;
+  if (isScenarioA() || isScenarioB()) {
+    if (logicalStep === 2) domStep = 4;
+    else if (logicalStep === 3) domStep = 2;
+    else if (logicalStep === 4) domStep = 3;
+    else domStep = logicalStep;
+  }
+  goToStep(domStep, logicalStep);
 }
 
 function selectOptionCard(btn) {
@@ -628,7 +791,9 @@ function updateRecommendedSetup(monthlySoftwareTotal) {
   });
 
   const totalCameras = state.standardCameras + state.smartCameras;
-  const hardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const reuseStandard = isScenarioB();
+  const rawHardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const hardwareStandard = reuseStandard ? 0 : rawHardwareStandard;
   const hardwareSmart = state.smartCameras * PRICES.smartCamera;
   const hardwareNodes = state.computeNodes * PRICES.node;
   const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
@@ -637,7 +802,13 @@ function updateRecommendedSetup(monthlySoftwareTotal) {
 
   if (state.standardCameras > 0) {
     parts.push(
-      `${state.standardCameras} × Standard IP camera${state.standardCameras > 1 ? "s" : ""} (${fmt.format(hardwareStandard)})`
+      reuseStandard
+        ? `${state.standardCameras} × Standard IP camera${
+            state.standardCameras > 1 ? "s" : ""
+          } (existing hardware, not included in Sighthound hardware cost)`
+        : `${state.standardCameras} × Standard IP camera${
+            state.standardCameras > 1 ? "s" : ""
+          } (${fmt.format(hardwareStandard)})`
     );
   }
   if (state.smartCameras > 0) {
@@ -682,7 +853,9 @@ function updateCostComparison() {
   const monthlySoftwareTotal =
     state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
 
-  const hardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const reuseStandard = isScenarioB();
+  const rawHardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const hardwareStandard = reuseStandard ? 0 : rawHardwareStandard;
   const hardwareSmart = state.smartCameras * PRICES.smartCamera;
   const hardwareNodes = state.computeNodes * PRICES.node;
   const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
@@ -738,10 +911,29 @@ function updateCostComparison() {
   const setupLine =
     setupParts.length > 0 ? `Setup: ${setupParts.join(", " )}. ` : "";
 
+  // Scenario-aware lead-in and context for the email summary
+  let scenarioLead;
+  if (isScenarioC()) {
+    scenarioLead = `Deployment estimate over ${state.timeframe} months.`;
+  } else if (isScenarioB()) {
+    scenarioLead = `Upgrade estimate (reusing existing Standard IP cameras) over ${state.timeframe} months.`;
+  } else if (isScenarioA()) {
+    scenarioLead = `Replacement comparison over ${state.timeframe} months.`;
+  } else {
+    scenarioLead = `Cost comparison over ${state.timeframe} months.`;
+  }
+
+  const scenarioContext = isScenarioA()
+    ? "Comparing your current smart / AI camera system with a Sighthound configuration using Standard IP cameras and Compute Nodes."
+    : isScenarioB()
+    ? "Assumes your existing Standard IP cameras remain in place and Sighthound provides nodes and analytics on top."
+    : isScenarioC()
+    ? "All hardware and software are treated as new for this deployment."
+    : "";
+
   const summaryLines = [
-    isScenarioC()
-      ? `Deployment estimate over ${state.timeframe} months.`
-      : `Cost comparison over ${state.timeframe} months.`,
+    scenarioLead,
+    scenarioContext,
     setupLine ? setupLine.trim() : "",
   ];
 
@@ -783,7 +975,9 @@ function updateSavingsCard() {
   const monthlySoftwareTotal =
     state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
 
-  const hardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const reuseStandard = isScenarioB();
+  const rawHardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const hardwareStandard = reuseStandard ? 0 : rawHardwareStandard;
   const hardwareSmart = state.smartCameras * PRICES.smartCamera;
   const hardwareNodes = state.computeNodes * PRICES.node;
   const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
@@ -824,7 +1018,8 @@ function updateSavingsCard() {
     el.innerHTML =
       `<strong>Estimated upgrade cost</strong><br>` +
       `${fmt.format(sighthoundTotal)} over ${state.timeframe} months to add centralized analytics ` +
-      `on top of your existing Standard IP cameras.`;
+      `on top of your existing Standard IP cameras.` +
+      `<br><span class="savings-subcopy">Assumes your existing Standard IP cameras remain in place.</span>`;
     return;
   }
 
@@ -937,7 +1132,9 @@ async function generatePDF() {
   const totalCameras = state.standardCameras + state.smartCameras;
   const monthlySoftwareTotal =
     state.software.reduce((sum, s) => sum + s.price, 0) * totalCameras;
-  const hardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const reuseStandard = isScenarioB();
+  const rawHardwareStandard = state.standardCameras * PRICES.standardCamera;
+  const hardwareStandard = reuseStandard ? 0 : rawHardwareStandard;
   const hardwareSmart = state.smartCameras * PRICES.smartCamera;
   const hardwareNodes = state.computeNodes * PRICES.node;
   const hardwareTotal = hardwareStandard + hardwareSmart + hardwareNodes;
@@ -1010,7 +1207,19 @@ async function generatePDF() {
   }
   subtitleParts.push(`${state.timeframe} month analysis`);
   doc.text(subtitleParts.join(" • "), margin, y);
-  y += 8;
+  y += 6;
+
+  // Explicit scenario line for quick scanning in the PDF
+  let scenarioLabel = "Custom scenario";
+  if (isScenarioA()) {
+    scenarioLabel = "Replace current smart / AI camera system";
+  } else if (isScenarioB()) {
+    scenarioLabel = "Reuse existing Standard IP cameras (upgrade)";
+  } else if (isScenarioC()) {
+    scenarioLabel = "New deployment (no existing cameras)";
+  }
+  doc.text(`Scenario: ${scenarioLabel}`, margin, y);
+  y += 6;
 
   // Card 1: Primary framing (scenario-aware)
   if (isScenarioA()) {
@@ -1076,9 +1285,13 @@ async function generatePDF() {
   // Hardware lines like the UI: per-component plus total
   if (state.standardCameras > 0) {
     breakdownLines.push(
-      `${state.standardCameras} × Standard IP camera${
-        state.standardCameras > 1 ? "s" : ""
-      } (${fmt.format(hardwareStandard)})`
+      reuseStandard
+        ? `${state.standardCameras} × Standard IP camera${
+            state.standardCameras > 1 ? "s" : ""
+          } (existing hardware, not included in Sighthound hardware cost)`
+        : `${state.standardCameras} × Standard IP camera${
+            state.standardCameras > 1 ? "s" : ""
+          } (${fmt.format(hardwareStandard)})`
     );
   }
   if (state.smartCameras > 0) {
