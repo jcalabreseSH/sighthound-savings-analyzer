@@ -2,8 +2,11 @@
 
 const state = {
   step: 1,
+  // `scenario` encodes buyer intent from Step 1: "A" | "B" | "C".
+  scenario: "", // A: smart/AI replacement, B: add analytics to existing IP, C: new deployment
+  // `cameraType` is retained for backwards-compatibility and also stores the raw option value
+  // ("scenario-a" | "scenario-b" | "scenario-c").
   cameraType: "",
-  ownership: "",
   standardCameras: 8,
   smartCameras: 0,
   computeNodes: 2,
@@ -63,6 +66,80 @@ function onClick(id, handler) {
   });
 }
 
+// Step 1 scenario helpers
+function isScenarioA() {
+  return state.scenario === "A";
+}
+function isScenarioB() {
+  return state.scenario === "B";
+}
+function isScenarioC() {
+  return state.scenario === "C";
+}
+
+function setScenarioFromCameraType(value) {
+  state.cameraType = value || "";
+  if (value === "scenario-a") state.scenario = "A";
+  else if (value === "scenario-b") state.scenario = "B";
+  else if (value === "scenario-c") state.scenario = "C";
+  else state.scenario = "";
+}
+
+function applyScenarioBehavior() {
+  // Step 2 hardware controls
+  const stdInput = document.getElementById("standardCameras");
+  const smartInput = document.getElementById("smartCameras");
+  const stdButtons = document.querySelectorAll('[data-target="standardCameras"]');
+  const smartButtons = document.querySelectorAll('[data-target="smartCameras"]');
+  const hardwareConfig = document.querySelector(".hardware-config");
+  const step4 = document.getElementById("step4");
+
+  // Default: everything enabled & visible
+  if (stdInput) stdInput.disabled = false;
+  if (smartInput) smartInput.disabled = false;
+  stdButtons.forEach((b) => {
+    b.disabled = false;
+    b.style.opacity = "1";
+    b.style.cursor = "pointer";
+  });
+  smartButtons.forEach((b) => {
+    b.disabled = false;
+    b.style.opacity = "1";
+    b.style.cursor = "pointer";
+  });
+  if (hardwareConfig) hardwareConfig.style.opacity = "1";
+  if (step4) step4.style.display = "";
+
+  if (isScenarioB()) {
+    // Scenario B  cameras are assumed existing; lock counts and de-emphasize purchase UI.
+    if (stdInput) stdInput.disabled = true;
+    if (smartInput) smartInput.disabled = true;
+    stdButtons.forEach((b) => {
+      b.disabled = true;
+      b.style.opacity = "0.4";
+      b.style.cursor = "not-allowed";
+    });
+    smartButtons.forEach((b) => {
+      b.disabled = true;
+      b.style.opacity = "0.4";
+      b.style.cursor = "not-allowed";
+    });
+    if (hardwareConfig) hardwareConfig.style.opacity = "0.8";
+  }
+
+  if (isScenarioC()) {
+    // Scenario C  new deployment, no current-cost step.
+    if (step4) step4.style.display = "none";
+    // Clear any current-cost values, since they are not relevant here.
+    state.currentMonthly = 0;
+    state.currentUpfront = 0;
+    const currentMonthlyInput = document.getElementById("currentMonthly");
+    const currentUpfrontInput = document.getElementById("currentUpfront");
+    if (currentMonthlyInput) currentMonthlyInput.value = "";
+    if (currentUpfrontInput) currentUpfrontInput.value = "";
+  }
+}
+
 // ---------- EVENT HANDLERS ----------
 function attachEventHandlers() {
   // Delegated handlers to ensure clicks are handled even if elements
@@ -73,6 +150,14 @@ function attachEventHandlers() {
 
     if (btn.id === "continueStep2") {
       e.preventDefault();
+      // OPTION C — require at least one camera before advancing
+      const totalCameras =
+        (parseInt(document.getElementById("standardCameras")?.value, 10) || 0) +
+        (parseInt(document.getElementById("smartCameras")?.value, 10) || 0);
+      if (isScenarioC() && totalCameras === 0) {
+        alert("Please enter at least one camera for a new deployment.");
+        return;
+      }
       goToStep(3);
       return;
     }
@@ -82,7 +167,8 @@ function attachEventHandlers() {
       updateSelectedSoftware();
       updateContinueStep3State();
       if (state.software.length === 0) return;
-      goToStep(4);
+      // OPTION C skips current-cost step and goes straight to calculation
+      goToStep(isScenarioC() ? 5 : 4);
       return;
     }
 
@@ -95,7 +181,7 @@ function attachEventHandlers() {
       });
       state.software = [];
       updateContinueStep3State();
-      goToStep(4);
+      goToStep(isScenarioC() ? 5 : 4);
       return;
     }
 
@@ -126,7 +212,8 @@ function attachEventHandlers() {
 
     if (btn.id === "backStep5") {
       e.preventDefault();
-      goToStep(4);
+      // OPTION C has no current-cost step; go back to software instead
+      goToStep(isScenarioC() ? 3 : 4);
       return;
     }
 
@@ -165,9 +252,10 @@ function attachEventHandlers() {
     btn.addEventListener("click", (e) => {
       console.log(`[savings] step1 option clicked dataset=${btn.dataset.value}`);
       e.preventDefault();
-      state.cameraType = btn.dataset.value || "";
+      setScenarioFromCameraType(btn.dataset.value || "");
       selectOptionCard(btn);
-      console.log(`[savings] cameraType set to ${state.cameraType}`);
+      console.log(`[savings] scenario set to ${state.scenario}, cameraType=${state.cameraType}`);
+      applyScenarioBehavior();
       goToStep(2);
     });
   });
@@ -250,8 +338,17 @@ function attachEventHandlers() {
     updateCamerasAndNodes();
   });
 
-  // Step 2 → 3
-  onClick("continueStep2", () => goToStep(3));
+  // Step 2 3 3 (delegated handler above owns scenario-specific behavior)
+  onClick("continueStep2", () => {
+    const totalCameras =
+      (parseInt(document.getElementById("standardCameras")?.value, 10) || 0) +
+      (parseInt(document.getElementById("smartCameras")?.value, 10) || 0);
+    if (isScenarioC() && totalCameras === 0) {
+      alert("Please enter at least one camera for a new deployment.");
+      return;
+    }
+    goToStep(3);
+  });
 
   // Step 3 software checkboxes
   document.querySelectorAll('#step3 input[name="software"]').forEach((input) => {
@@ -262,11 +359,11 @@ function attachEventHandlers() {
   });
 
   onClick("continueStep3", () => {
-    // safeguard: don’t advance if nothing selected
+    // safeguard: dont advance if nothing selected
     updateSelectedSoftware();
     updateContinueStep3State();
     if (state.software.length === 0) return;
-    goToStep(4);
+    goToStep(isScenarioC() ? 5 : 4);
   });
 
   // Current cost inputs
@@ -451,23 +548,30 @@ function updateNodeStatus(totalCameras, suggestedNodes) {
   if (!nodeStatus) return;
 
   const capacity = state.computeNodes * CAMERAS_PER_NODE;
+  const requiredNodes = suggestedNodes;
 
   if (totalCameras === 0) {
     nodeStatus.className = "node-status neutral";
-    nodeStatus.textContent = "No cameras configured";
+    nodeStatus.textContent =
+      "Each compute node supports up to 4 cameras. Your configuration requires 0 node(s).";
   } else if (state.computeNodes === 0) {
     nodeStatus.className = "node-status info";
-    nodeStatus.textContent = `No Compute Nodes selected. Suggested: ${suggestedNodes} node${
-      suggestedNodes > 1 ? "s" : ""
-    } (supports ${suggestedNodes * CAMERAS_PER_NODE} cameras)`;
+    nodeStatus.textContent =
+      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+        requiredNodes === 1 ? "" : "s"
+      }. No nodes selected yet.`;
   } else if (capacity < totalCameras) {
     nodeStatus.className = "node-status warning";
-    nodeStatus.textContent = `Selected nodes support ${capacity} cameras, but you configured ${totalCameras}. Consider adding more nodes.`;
+    nodeStatus.textContent =
+      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+        requiredNodes === 1 ? "" : "s"
+      }, but selected nodes only support ${capacity} cameras for ${totalCameras} configured.`;
   } else {
     nodeStatus.className = "node-status success";
-    nodeStatus.textContent = `Compute Nodes configuration supports ${capacity} camera${
-      capacity === 1 ? "" : "s"
-    } (${totalCameras} configured)`;
+    nodeStatus.textContent =
+      `Each compute node supports up to 4 cameras. Your configuration requires ${requiredNodes} node${
+        requiredNodes === 1 ? "" : "s"
+      }. Selected nodes can support up to ${capacity} camera${capacity === 1 ? "" : "s"}.`;
   }
 }
 
@@ -607,10 +711,23 @@ function updateCostComparison() {
 
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
 
-  el.innerHTML = `
-    <div>Current Setup — Upfront: ${fmt.format(state.currentUpfront)} <br>Monthly (${state.timeframe} mo): ${fmt.format(currentMonthlyNormalized * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
-    <div>Sighthound — Hardware: ${fmt.format(hardwareTotal)}<br>Monthly Software (${state.timeframe} mo): ${fmt.format(monthlySoftwareTotal * state.timeframe)}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
-  `;
+  if (isScenarioC()) {
+    // OPTION C — new deployment; no existing-cost comparison
+    el.innerHTML = `
+      <div><strong>Sighthound deployment</strong> <br>Hardware: ${fmt.format(hardwareTotal)}<br>Monthly Software (${state.timeframe} mo): ${fmt.format(
+        monthlySoftwareTotal * state.timeframe
+      )}<br><br> <b>Total estimated deployment cost:</b> ${fmt.format(sighthoundTotal)}</div>
+    `;
+  } else {
+    el.innerHTML = `
+      <div><strong>Current Setup</strong> <br>Upfront: ${fmt.format(state.currentUpfront)} <br>Monthly (${state.timeframe} mo): ${fmt.format(
+        currentMonthlyNormalized * state.timeframe
+      )}<br><br> <b>Total:</b> ${fmt.format(currentTotal)}</div>
+      <div><strong>Sighthound </strong> <br> Hardware: ${fmt.format(hardwareTotal)}<br>Monthly Software (${state.timeframe} mo): ${fmt.format(
+        monthlySoftwareTotal * state.timeframe
+      )}<br><br> <b>Total:</b> ${fmt.format(sighthoundTotal)}</div>
+    `;
+  }
 
   // Also surface a plain-text summary for the custom HubSpot popup form
   const setupParts = [];
@@ -639,17 +756,27 @@ function updateCostComparison() {
     setupParts.length > 0 ? `Setup: ${setupParts.join(", " )}. ` : "";
 
   const summaryLines = [
-    `Cost comparison over ${state.timeframe} months.`,
+    isScenarioC()
+      ? `Deployment estimate over ${state.timeframe} months.`
+      : `Cost comparison over ${state.timeframe} months.`,
     setupLine ? setupLine.trim() : "",
-    `Current setup — upfront ${fmt.format(state.currentUpfront)},`,
-    `Monthly ${fmt.format(currentMonthlyNormalized * state.timeframe)},`,
-    `Total ${fmt.format(currentTotal)}.`,
+  ];
+
+  if (!isScenarioC()) {
+    summaryLines.push(
+      `Current setup — upfront ${fmt.format(state.currentUpfront)},`,
+      `Monthly ${fmt.format(currentMonthlyNormalized * state.timeframe)},`,
+      `Total ${fmt.format(currentTotal)}.`,
+    );
+  }
+
+  summaryLines.push(
     `Sighthound — hardware ${fmt.format(hardwareTotal)},`,
     `Monthly Software ${fmt.format(monthlySoftwareTotal * state.timeframe)},`,
     `Total ${fmt.format(sighthoundTotal)}.`,
-  ].filter(Boolean);
+  );
 
-  const summary = summaryLines.join("\n");
+  const summary = summaryLines.filter(Boolean).join("\n");
 
   try {
     window.__HARDWARE_ESTIMATE_SUMMARY__ = summary;
@@ -686,19 +813,53 @@ function updateSavingsCard() {
   const currentTotal = state.currentUpfront + currentMonthlyNormalized * state.timeframe;
 
   const savings = currentTotal - sighthoundTotal;
-  const savingsPerMonth = savings / state.timeframe;
+  const savingsPerMonth = savings / (state.timeframe || 1);
 
-  if (savings > 0) {
-    el.className = "savings-card";
-    el.textContent =
-      `You save ${fmt.format(savings)} over ${state.timeframe} months ` +
-      `(${fmt.format(savingsPerMonth)}/month less than your current provider).`;
-  } else {
-    el.className = "savings-card neutral";
-    el.textContent =
-      `Additional investment of ${fmt.format(Math.abs(savings))} over ${state.timeframe} months. ` +
-      `This includes upgraded hardware and enterprise-grade analytics.`;
+  // OPTION A — Smart / AI cameras with built-in analytics
+  // Savings language is allowed and must be labeled "Estimated savings".
+  if (isScenarioA()) {
+    if (savings > 0) {
+      el.className = "savings-card";
+      el.innerHTML =
+        `<strong>Estimated replacement cost</strong><br>` +
+        `Estimated savings of ${fmt.format(savings)} over ${state.timeframe} months ` +
+        `(${fmt.format(savingsPerMonth)}/month compared to your current setup).`;
+    } else {
+      el.className = "savings-card neutral";
+      el.innerHTML =
+        `<strong>Estimated replacement cost</strong><br>` +
+        `Additional investment of ${fmt.format(Math.abs(savings))} over ${state.timeframe} months. ` +
+        `This reflects moving from camera-embedded analytics to centralized Sighthound analytics.`;
+    }
+    return;
   }
+
+  // OPTION B — Standard IP cameras (no advanced analytics)
+  // Focus on capability enablement and upgrade cost (no implied savings language).
+  if (isScenarioB()) {
+    el.className = "savings-card neutral";
+    el.innerHTML =
+      `<strong>Estimated upgrade cost</strong><br>` +
+      `${fmt.format(sighthoundTotal)} over ${state.timeframe} months to add centralized analytics ` +
+      `on top of your existing Standard IP cameras.`;
+    return;
+  }
+
+  // OPTION C — No cameras yet (new deployment)
+  // No comparison or savings language; pure deployment cost.
+  if (isScenarioC()) {
+    el.className = "savings-card neutral";
+    el.innerHTML =
+      `<strong>Estimated deployment cost</strong><br>` +
+      `${fmt.format(sighthoundTotal)} over ${state.timeframe} months for a new Sighthound deployment ` +
+      `(hardware + optional analytics).`;
+    return;
+  }
+
+  // Fallback (should be rare): treat as neutral comparison
+  el.className = "savings-card neutral";
+  el.textContent =
+    `Estimated cost over ${state.timeframe} months: ${fmt.format(sighthoundTotal)}.`;
 }
 
 // ---------- PDF EXPORT ----------
@@ -847,10 +1008,13 @@ async function generatePDF() {
     y = top + cardHeight + 5;
   }
 
-  // Title & subtitle
+  // Title & subtitle (scenario-aware, respecting language guardrails)
   doc.setFontSize(18);
   doc.setTextColor(17, 24, 39);
-  doc.text("Sighthound Savings Summary", margin, y);
+  let pdfTitle = "Sighthound Savings Summary";
+  if (isScenarioB()) pdfTitle = "Sighthound Upgrade Summary";
+  if (isScenarioC()) pdfTitle = "Sighthound Deployment Estimate";
+  doc.text(pdfTitle, margin, y);
   y += 8;
 
   doc.setFontSize(11);
@@ -865,33 +1029,61 @@ async function generatePDF() {
   doc.text(subtitleParts.join(" • "), margin, y);
   y += 8;
 
-  // Card 1: Savings summary (primary highlight)
-  if (savings > 0) {
+  // Card 1: Primary framing (scenario-aware)
+  if (isScenarioA()) {
+    if (savings > 0) {
+      drawCard(
+        "Estimated savings",
+        [
+          `Estimated savings over ${state.timeframe} months: ${fmt.format(savings)}.`,
+          `Average monthly impact: ${fmt.format(savingsPerMonth)} compared to today.`,
+        ],
+        [34, 197, 94] // bright green accent
+      );
+    } else if (savings < 0) {
+      drawCard(
+        "Estimated replacement cost",
+        [
+          `Additional investment over ${state.timeframe} months: ${fmt.format(Math.abs(savings))}.`,
+          "Reflects moving from camera-embedded analytics to centralized Sighthound analytics.",
+        ],
+        [239, 68, 68] // red accent
+      );
+    } else {
+      drawCard(
+        "Neutral replacement comparison",
+        [
+          "Your projected Sighthound replacement costs are roughly in line with what you pay today.",
+          "Adjust camera counts, analytics selection, or timeframe to explore different scenarios.",
+        ],
+        [107, 114, 128] // neutral gray accent
+      );
+    }
+  } else if (isScenarioB()) {
     drawCard(
-      "Your savings at a glance",
+      "Upgrade cost overview",
       [
-        `Net savings over ${state.timeframe} months: ${fmt.format(savings)}.`,
-        `Average monthly impact: ${fmt.format(savingsPerMonth)} less than today.`,
+        `Estimated upgrade cost over ${state.timeframe} months: ${fmt.format(sighthoundTotal)}.`,
+        "Represents adding centralized analytics on top of your existing Standard IP cameras.",
       ],
-      [34, 197, 94] // bright green accent
+      [16, 185, 129]
     );
-  } else if (savings < 0) {
+  } else if (isScenarioC()) {
     drawCard(
-      "Additional investment",
+      "Deployment cost overview",
       [
-        `Additional investment over ${state.timeframe} months: ${fmt.format(Math.abs(savings))}.`,
-        "Reflects upgraded cameras, compute, and analytics versus your current setup.",
+        `Estimated deployment cost over ${state.timeframe} months: ${fmt.format(sighthoundTotal)}.`,
+        "All hardware and software are treated as net-new in this scenario.",
       ],
-      [239, 68, 68] // red accent
+      [79, 70, 229]
     );
   } else {
     drawCard(
-      "Neutral comparison",
+      "Cost overview",
       [
-        "Your projected Sighthound costs are roughly in line with what you pay today.",
-        "Adjust camera counts, analytics selection, or timeframe to explore different scenarios.",
+        `Estimated cost over ${state.timeframe} months: ${fmt.format(sighthoundTotal)}.`,
       ],
-      [107, 114, 128] // neutral gray accent
+      [107, 114, 128]
     );
   }
 
@@ -938,26 +1130,44 @@ async function generatePDF() {
   breakdownLines.push(softwareLinePdf);
   breakdownLines.push("");
 
-  // Side-by-side style totals for the selected timeframe (no 12/24/36 toggle)
-  breakdownLines.push(
-    `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, Monthly (${state.timeframe} mo): ${fmt.format(
-      currentMonthlyNormalized * state.timeframe
-    )}, Total: ${fmt.format(currentTotal)}`
-  );
-  breakdownLines.push(
-    `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, Monthly Software (${state.timeframe} mo): ${fmt.format(
-      monthlySoftwareTotal * state.timeframe
-    )}, Total: ${fmt.format(sighthoundTotal)}`
-  );
+  // Totals for the selected timeframe (scenario-aware)
+  if (!isScenarioC()) {
+    // Scenarios A & B — include current vs Sighthound comparison
+    breakdownLines.push(
+      `Current Setup — Upfront: ${fmt.format(state.currentUpfront)}, Monthly (${state.timeframe} mo): ${fmt.format(
+        currentMonthlyNormalized * state.timeframe
+      )}, Total: ${fmt.format(currentTotal)}`
+    );
+    breakdownLines.push(
+      `Sighthound — Hardware: ${fmt.format(hardwareTotal)}, Monthly Software (${state.timeframe} mo): ${fmt.format(
+        monthlySoftwareTotal * state.timeframe
+      )}, Total: ${fmt.format(sighthoundTotal)}`
+    );
+  } else {
+    // Scenario C — new deployment only, no current baseline
+    breakdownLines.push(
+      `Sighthound deployment — Hardware: ${fmt.format(hardwareTotal)}, Monthly Software (${state.timeframe} mo): ${fmt.format(
+        monthlySoftwareTotal * state.timeframe
+      )}, Total estimated deployment cost: ${fmt.format(sighthoundTotal)}`
+    );
+  }
 
-  drawCard("Cost breakdown", breakdownLines, [16, 185, 129]);
+  drawCard(
+    isScenarioC() ? "Deployment cost breakdown" : "Cost breakdown",
+    breakdownLines,
+    [16, 185, 129]
+  );
 
   // Card 3: Configuration snapshot
+  let cameraTypeLabel = "Not specified";
+  if (isScenarioA()) cameraTypeLabel = "Smart cameras";
+  else if (isScenarioB()) cameraTypeLabel = "IP cameras";
+  else if (isScenarioC()) cameraTypeLabel = "New deployment";
+
   drawCard(
     "Configuration snapshot",
     [
-      `Camera type: ${state.cameraType || "Not specified"}`,
-      `Ownership: ${state.ownership || "Not specified"}`,
+      `Camera type: ${cameraTypeLabel}`,
       `Standard IP cameras: ${state.standardCameras}`,
       `Smart cameras: ${state.smartCameras}`,
       `Compute nodes: ${state.computeNodes} (up to ${

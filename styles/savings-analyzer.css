@@ -1724,11 +1724,18 @@ label {
   background: #f3f4f6;
   color: #374151;
 }
-.options-stack[data-astro-cid-j7pv25f6] {
+.step-actions[data-astro-cid-j7pv25f6] {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.row-actions[data-astro-cid-j7pv25f6] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
 }
 .checkbox-card[data-astro-cid-j7pv25f6] {
   display: block;
