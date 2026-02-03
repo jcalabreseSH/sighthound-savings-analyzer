@@ -651,13 +651,63 @@
             Share a few details and we'll send this savings analysis straight to your inbox.
           </p>
           <div class="email-modal-form-wrapper">
-            <script src="https://js.hsforms.net/forms/embed/3983149.js" defer></script>
-            <div
-              class="hs-form-frame"
-              data-region="na1"
-              data-form-id="db29dbf9-0e59-4b53-87bf-07b23e1fd272"
+            <form
+              id="emailEstimateForm"
+              class="email-modal-form"
               data-portal-id="3983149"
-            ></div>
+              data-form-id="db29dbf9-0e59-4b53-87bf-07b23e1fd272"
+            >
+              <div class="email-form-group">
+                <label for="emailFirstName">First Name<span class="email-field-required">*</span></label>
+                <input
+                  id="emailFirstName"
+                  name="firstname"
+                  type="text"
+                  required
+                  autocomplete="given-name"
+                />
+              </div>
+
+              <div class="email-form-group">
+                <label for="emailLastName">Last Name<span class="email-field-required">*</span></label>
+                <input
+                  id="emailLastName"
+                  name="lastname"
+                  type="text"
+                  required
+                  autocomplete="family-name"
+                />
+              </div>
+
+              <div class="email-form-group">
+                <label for="emailAddress">Email<span class="email-field-required">*</span></label>
+                <input
+                  id="emailAddress"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                />
+              </div>
+
+              <div class="email-form-group">
+                <label for="hardwareEstimateSummary">Hardware Estimate Summary</label>
+                <textarea
+                  id="hardwareEstimateSummary"
+                  name="hardware_estimate_summary"
+                  rows="4"
+                ></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary email-modal-submit">
+                Submit
+              </button>
+
+              <p class="email-modal-helper">
+                We'll email you this savings analysis along with your estimated
+                hardware configuration.
+              </p>
+            </form>
           </div>
         </div>
       </div>
