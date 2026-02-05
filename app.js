@@ -540,6 +540,18 @@ function attachEventHandlers() {
   onClick("emailPdfButton", () => {
     const modal = document.getElementById("emailModal");
     const summaryField = document.getElementById("hardwareEstimateSummary");
+    const formWrapper = document.querySelector(".email-modal-form-wrapper");
+    const thankYou = document.getElementById("emailThankYou");
+
+    // Reset to form state whenever the modal is opened
+    if (thankYou) {
+      thankYou.classList.remove("active");
+      thankYou.setAttribute("aria-hidden", "true");
+    }
+    if (formWrapper) {
+      formWrapper.style.display = "";
+    }
+
     if (summaryField) {
       summaryField.value = String(window.__HARDWARE_ESTIMATE_SUMMARY__ || "");
     }
@@ -551,6 +563,15 @@ function attachEventHandlers() {
 
   onClick("emailModalClose", () => {
     const modal = document.getElementById("emailModal");
+    const formWrapper = document.querySelector(".email-modal-form-wrapper");
+    const thankYou = document.getElementById("emailThankYou");
+    if (thankYou) {
+      thankYou.classList.remove("active");
+      thankYou.setAttribute("aria-hidden", "true");
+    }
+    if (formWrapper) {
+      formWrapper.style.display = "";
+    }
     if (modal) {
       modal.classList.remove("active");
       modal.setAttribute("aria-hidden", "true");
@@ -560,6 +581,15 @@ function attachEventHandlers() {
   const emailModal = document.getElementById("emailModal");
   emailModal?.addEventListener("click", (e) => {
     if (e.target === emailModal) {
+      const formWrapper = document.querySelector(".email-modal-form-wrapper");
+      const thankYou = document.getElementById("emailThankYou");
+      if (thankYou) {
+        thankYou.classList.remove("active");
+        thankYou.setAttribute("aria-hidden", "true");
+      }
+      if (formWrapper) {
+        formWrapper.style.display = "";
+      }
       emailModal.classList.remove("active");
       emailModal.setAttribute("aria-hidden", "true");
     }
@@ -607,9 +637,22 @@ function attachEventHandlers() {
       if (resp.ok) {
         formEl.reset();
         const modal = document.getElementById("emailModal");
-        modal?.classList.remove("active");
-        modal?.setAttribute("aria-hidden", "true");
-        alert("Thanks! We'll email you this analysis shortly.");
+        const formWrapper = document.querySelector(".email-modal-form-wrapper");
+        const thankYou = document.getElementById("emailThankYou");
+
+        // Swap to thank-you state instead of alert
+        if (formWrapper) {
+          formWrapper.style.display = "none";
+        }
+        if (thankYou) {
+          thankYou.classList.add("active");
+          thankYou.setAttribute("aria-hidden", "false");
+        }
+
+        if (modal) {
+          modal.classList.add("active");
+          modal.setAttribute("aria-hidden", "false");
+        }
       } else {
         console.error("HubSpot form submission failed", await resp.text());
         alert("Something went wrong submitting the form. Please try again.");
@@ -617,6 +660,24 @@ function attachEventHandlers() {
     } catch (err) {
       console.error("HubSpot form submission error", err);
       alert("Something went wrong submitting the form. Please try again.");
+    }
+  });
+
+  // Thank-you close button inside modal
+  onClick("emailThankYouClose", () => {
+    const modal = document.getElementById("emailModal");
+    const formWrapper = document.querySelector(".email-modal-form-wrapper");
+    const thankYou = document.getElementById("emailThankYou");
+    if (thankYou) {
+      thankYou.classList.remove("active");
+      thankYou.setAttribute("aria-hidden", "true");
+    }
+    if (formWrapper) {
+      formWrapper.style.display = "";
+    }
+    if (modal) {
+      modal.classList.remove("active");
+      modal.setAttribute("aria-hidden", "true");
     }
   });
 }

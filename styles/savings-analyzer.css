@@ -1973,6 +1973,16 @@ label {
   margin-top: 8px;
 }
 
+.email-modal-thankyou {
+  display: none;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.email-modal-thankyou.active {
+  display: block;
+}
+
 .email-modal-form {
   display: flex;
   flex-direction: column;
