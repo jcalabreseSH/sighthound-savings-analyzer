@@ -812,7 +812,11 @@
                 ></textarea>
               </div>
 
-              <button type="submit" class="btn btn-primary email-modal-submit">
+              <button
+                type="submit"
+                class="btn btn-primary email-modal-submit"
+                data-astro-cid-j7pv25f6
+              >
                 Submit
               </button>
 
@@ -821,6 +825,22 @@
                 hardware configuration.
               </p>
             </form>
+          </div>
+
+          <!-- Thank-you state shown after successful submission -->
+          <div id="emailThankYou" class="email-modal-thankyou" aria-hidden="true">
+            <h3 class="email-modal-title">Thank you!</h3>
+            <p class="email-modal-subtitle">
+              We've received your request and will email this savings analysis to you shortly.
+            </p>
+            <button
+              type="button"
+              class="btn btn-primary email-modal-submit"
+              id="emailThankYouClose"
+              data-astro-cid-j7pv25f6
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
